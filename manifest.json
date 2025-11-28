@@ -1,0 +1,37 @@
+{
+  "name": "AgroFácil",
+  "short_name": "AgroFácil",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#8B5A2B",
+  "theme_color": "#16A34A",
+  "icons": [
+    {
+      "src": "icons/icon-72.png.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-96.png.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-144.png.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192.png.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
