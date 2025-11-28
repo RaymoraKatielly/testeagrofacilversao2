@@ -872,23 +872,3 @@ function initElementSdkIfPresent() {
     console.warn("elementSdk read failed", err);
   }
 }
-
-/* ============================================================
-   INICIALIZAÇÃO GERAL DO APP
-   ============================================================ */
-(function init() {
-  // Render inicial (home)
-  renderHome();
-
-  // Botão de config (extra segurança)
-  if (btnOpenConfig) {
-    btnOpenConfig.addEventListener("click", (e) => {
-      e.preventDefault();
-      navigateTo("config");
-    });
-  }
-
-  // Inicialização dos SDKs
-  initDataSdkIfPresent();
-  initElementSdkIfPresent();
-})();
