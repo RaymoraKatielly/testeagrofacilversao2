@@ -1,30 +1,29 @@
-// ==========================================================
-//  BANCO DE DADOS LOCAL (LocalStorage)
-//  ----------------------------------------------------------
-//  Esta seção define as CHAVES de armazenamento e as funções
-//  genéricas "load" e "save", usadas para ler/gravar qualquer
-//  parte dos dados do app.
-// ==========================================================
+/* ==========================================================
+   app.js - Versão reconstruída (comportamento original)
+   Mantém: Home, Produtos, Custos, Vendas (simples),
+   Relatórios, Config e Suporte. Armazenamento em localStorage.
+   ========================================================== */
 
+/* ---------------------------
+   Helpers e storage
+   --------------------------- */
 const storageKeys = {
   PRODUTOS: "agrofacil_produtos",
-  CONFIG: "agrofacil_config",
   VENDAS: "agrofacil_vendas",
-  CUSTOS: "agrofacil_custos"
+  CUSTOS: "agrofacil_custos",
+  CONFIG: "agrofacil_config",
 };
 
-// Função de leitura do LocalStorage
 function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
   } catch (e) {
     console.error("Erro ao carregar:", key, e);
-    return fallback; // evita travamentos
+    return fallback;
   }
 }
 
-// Função de gravação no LocalStorage
 function save(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
@@ -33,855 +32,648 @@ function save(key, data) {
   }
 }
 
-// ==========================================================
-//  ESTADO PRINCIPAL DO APLICATIVO
-//  ----------------------------------------------------------
-//  Carregamos as listas de produtos, vendas, custos e config.
-//  Cada uma é salva automaticamente sempre que alterada.
-// ==========================================================
-
-let products = load(storageKeys.PRODUTOS, []);
-let vendeHist = load(storageKeys.VENDAS, []);
-let custosHist = load(storageKeys.CUSTOS, []);
-let userConfig = load(storageKeys.CONFIG, { ownerName: "", lastBackup: null });
-
-// ==========================================================
-//  SISTEMA DE TROCA DE TELAS (NAVEGAÇÃO)
-//  ----------------------------------------------------------
-//  Todas as DIVs com classe .screen são escondidas, exceto a
-//  escolhida. O HTML usa IDs simples como "tela-produtos".
-// ==========================================================
-
-function showScreen(id) {
-  document.querySelectorAll(".screen").forEach((el) => el.classList.add("hidden"));
-
-  const screen = document.getElementById(id);
-  if (screen) screen.classList.remove("hidden");
+function formatCurrency(value) {
+  const n = Number(value) || 0;
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-// ==========================================================
-//  ======================= PRODUTOS =========================
-//  ----------------------------------------------------------
-//  Seção responsável por:
-//   • cadastrar produtos,
-//   • listar produtos,
-//   • excluir produtos,
-//   • salvar tudo em localStorage.
-// ==========================================================
+/* ---------------------------
+   Estado do aplicativo
+   --------------------------- */
+let products = load(storageKeys.PRODUTOS, []); // {id, nome, preco}
+let vendas = load(storageKeys.VENDAS, []); // {id, produtoId, quantidade, total_venda, created_at}
+let custos = load(storageKeys.CUSTOS, []); // {id, descricao, valor, tipo, data}
 
-// Formulário de cadastro de produto
-const addProductForm = document.getElementById("add-product-form");
+let currentScreen = "home";
 
-// Container da lista onde os produtos aparecem
-const productListContainer = document.getElementById("product-list");
+/* Elementos globais (pega quando DOM estiver pronto) */
+let screenContainer = null;
+let appTitleEl = null;
+let homeSubtitleEl = null;
 
-// --- Cadastro de novo produto ---
-if (addProductForm) {
-  addProductForm.addEventListener("submit", (e) => {
+/* ---------------------------
+   Utilidades de UI
+   --------------------------- */
+function clearScreen() {
+  if (!screenContainer) return;
+  screenContainer.innerHTML = "";
+}
+
+function createBackButton(text = "Voltar", target = "home") {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className =
+    "focus-ring rounded-full bg-[#D1B38A] px-3 py-1 text-sm font-bold text-[#3F2A14]";
+  btn.textContent = text;
+  btn.addEventListener("click", () => navigateTo(target));
+  return btn;
+}
+
+function findProductById(id) {
+  return products.find((p) => p.id === Number(id));
+}
+
+/* ---------------------------
+   Navegação (função global usada no index.html)
+   --------------------------- */
+function navigateTo(screenKey) {
+  currentScreen = screenKey;
+  switch (screenKey) {
+    case "home":
+      renderHome();
+      break;
+    case "produtos":
+      renderProdutos();
+      break;
+    case "custos":
+      renderCustos();
+      break;
+    case "vendas":
+      renderVendas();
+      break;
+    case "relatorios":
+      renderRelatorios();
+      break;
+    case "config":
+      renderConfig();
+      break;
+    default:
+      renderHome();
+  }
+}
+
+/* ---------------------------
+   TELA: HOME
+   --------------------------- */
+function renderHome() {
+  clearScreen();
+  const sec = document.createElement("section");
+  sec.className = "flex-1 flex flex-col h-full overflow-auto p-6";
+
+  const title = document.createElement("h2");
+  title.className = "text-2xl font-extrabold text-[#3F2A14]";
+  title.textContent = "Bem-vindo ao AgroFácil";
+
+  const subtitle = document.createElement("p");
+  subtitle.className = "mt-2 text-[#5C4A32]";
+  subtitle.textContent = "Escolha uma função no menu.";
+
+  // botões rápidos
+  const actions = document.createElement("div");
+  actions.className = "mt-6 grid grid-cols-2 gap-3";
+
+  const btn = (label, key) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className =
+      "focus-ring rounded-2xl px-4 py-3 font-bold text-sm bg-[#16A34A] text-[#FDF6E3] hover:opacity-90";
+    b.textContent = label;
+    b.addEventListener("click", () => navigateTo(key));
+    return b;
+  };
+
+  actions.append(btn("Produtos", "produtos"), btn("Vendas", "vendas"));
+  actions.append(btn("Custos", "custos"), btn("Relatórios", "relatorios"));
+
+  sec.append(title, subtitle, actions);
+  screenContainer.appendChild(sec);
+}
+
+/* ---------------------------
+   TELA: PRODUTOS
+   --------------------------- */
+function renderProdutos() {
+  clearScreen();
+
+  const section = document.createElement("section");
+  section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
+
+  const header = document.createElement("div");
+  header.className = "flex items-center justify-between pb-2";
+  const title = document.createElement("h2");
+  title.textContent = "Produtos";
+  title.className = "text-xl font-extrabold text-[#3F2A14]";
+  header.appendChild(title);
+  header.appendChild(createBackButton("Voltar", "home"));
+  section.appendChild(header);
+
+  // formulário simples
+  const form = document.createElement("form");
+  form.className = "flex gap-2 items-center w-full mb-3";
+  form.innerHTML = `
+    <input id="product-name" placeholder="Nome do produto" class="flex-1 p-2 border rounded" />
+    <input id="product-price" placeholder="Preço (ex: 10.50)" class="w-32 p-2 border rounded" />
+    <button type="submit" class="bg-[#16A34A] text-white px-4 py-2 rounded">Adicionar</button>
+  `;
+  section.appendChild(form);
+
+  const listWrap = document.createElement("div");
+  listWrap.id = "product-list";
+  section.appendChild(listWrap);
+
+  // eventos
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
+    const nameInput = form.querySelector("#product-name");
+    const priceInput = form.querySelector("#product-price");
+    const nome = nameInput.value.trim();
+    const preco = parseFloat(priceInput.value.replace(",", "."));
 
-    const nome = document.getElementById("product-name").value.trim();
-    const preco = parseFloat(document.getElementById("product-price").value);
-
-    // Validação simples
     if (!nome || isNaN(preco)) {
-      alert("Preencha todos os campos corretamente.");
+      alert("Preencha nome e preço corretamente.");
       return;
     }
 
-    // Objeto do novo produto
-    const novo = {
-      id: Date.now(), // serve como ID único
-      nome,
-      preco
-    };
-
-    // Atualiza memória e salva
+    const novo = { id: Date.now(), nome, preco };
     products.push(novo);
     save(storageKeys.PRODUTOS, products);
-
     updateProductListUI();
-    addProductForm.reset();
+    nameInput.value = "";
+    priceInput.value = "";
   });
+
+  screenContainer.appendChild(section);
+
+  // render atual
+  updateProductListUI();
 }
 
-// --- Atualiza visualmente os produtos cadastrados ---
 function updateProductListUI() {
-  if (!productListContainer) return;
+  const cont = document.getElementById("product-list");
+  if (!cont) return;
+  cont.innerHTML = "";
 
-  productListContainer.innerHTML = "";
-
-  // Caso não exista produto
-  if (products.length === 0) {
-    productListContainer.innerHTML = `<p class="text-gray-500">Nenhum produto cadastrado.</p>`;
+  if (!products || products.length === 0) {
+    cont.innerHTML = `<p class="text-gray-500">Nenhum produto cadastrado.</p>`;
     return;
   }
 
-  // Renderiza cada produto
   products.forEach((p) => {
     const item = document.createElement("div");
-    item.className =
-      "flex justify-between items-center bg-white p-4 rounded-xl shadow mb-2";
-
+    item.className = "flex justify-between items-center bg-white p-3 rounded-xl mb-2 shadow";
     item.innerHTML = `
       <div>
         <p class="font-semibold">${p.nome}</p>
-        <p class="text-sm text-gray-600">R$ ${p.preco.toFixed(2)}</p>
+        <p class="text-sm text-gray-600">${formatCurrency(p.preco)}</p>
       </div>
-
-      <!-- Botão de excluir -->
-      <button data-id="${p.id}" class="delete-product text-red-600 font-bold">X</button>
+      <div class="flex gap-2 items-center">
+        <button class="edit-product text-xs px-2 py-1 rounded bg-[#D1B38A]">Editar</button>
+        <button class="delete-product text-xs px-2 py-1 rounded bg-[#F87171] text-white" data-id="${p.id}">Excluir</button>
+      </div>
     `;
-
-    productListContainer.appendChild(item);
+    cont.appendChild(item);
   });
 
-  // Listener dos botões "X"
-  document.querySelectorAll(".delete-product").forEach((btn) => {
+  // exclusão
+  cont.querySelectorAll(".delete-product").forEach((btn) =>
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-
-      // Remove o produto
-      products = products.filter((p) => p.id !== id);
+      products = products.filter((x) => x.id !== id);
       save(storageKeys.PRODUTOS, products);
+      updateProductListUI();
+    })
+  );
 
+  // edição inline simples
+  cont.querySelectorAll(".edit-product").forEach((btn, idx) => {
+    btn.addEventListener("click", () => {
+      const p = products[idx];
+      const novoNome = prompt("Editar nome do produto:", p.nome);
+      if (novoNome === null) return;
+      const novoPreco = prompt("Editar preço:", p.preco);
+      if (novoPreco === null) return;
+      const precoNum = parseFloat(novoPreco.replace(",", "."));
+      if (!novoNome.trim() || isNaN(precoNum)) {
+        alert("Dados inválidos.");
+        return;
+      }
+      p.nome = novoNome.trim();
+      p.preco = precoNum;
+      save(storageKeys.PRODUTOS, products);
       updateProductListUI();
     });
   });
 }
 
-// Renderiza produtos ao carregar o app
-updateProductListUI();
+/* ---------------------------
+   TELA: CUSTOS
+   --------------------------- */
+function renderCustos() {
+  clearScreen();
 
-// ==========================================================
-//  ========================= CUSTOS =========================
-//  ----------------------------------------------------------
-//  Aqui gerenciamos:
-//    • cadastro de custos,
-//    • renderização da lista,
-//    • exclusão,
-//    • armazenamento local.
-// ==========================================================
+  const section = document.createElement("section");
+  section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
 
-const addCostForm = document.getElementById("add-cost-form");
-const costListContainer = document.getElementById("cost-list");
+  const header = document.createElement("div");
+  header.className = "flex items-center justify-between pb-2";
+  const title = document.createElement("h2");
+  title.textContent = "Custos";
+  title.className = "text-xl font-extrabold text-[#3F2A14]";
+  header.appendChild(title);
+  header.appendChild(createBackButton("Voltar", "home"));
+  section.appendChild(header);
 
-// --- Cadastro de custo ---
-if (addCostForm) {
-  addCostForm.addEventListener("submit", (e) => {
+  // form
+  const form = document.createElement("form");
+  form.className = "flex flex-col gap-2 mb-3";
+  form.innerHTML = `
+    <input id="cost-desc" placeholder="Descrição do custo" class="p-2 border rounded" />
+    <div class="flex gap-2">
+      <input id="cost-value" placeholder="Valor (ex: 50.00)" class="p-2 border rounded flex-1" />
+      <select id="cost-type" class="p-2 border rounded w-40">
+        <option value="">Tipo</option>
+        <option value="insumo">Insumo</option>
+        <option value="transporte">Transporte</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <button type="submit" class="bg-[#16A34A] text-white px-4 py-2 rounded">Adicionar custo</button>
+  `;
+  section.appendChild(form);
+
+  const listWrap = document.createElement("div");
+  listWrap.id = "cost-list";
+  section.appendChild(listWrap);
+
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
-
-    const descricao = document.getElementById("cost-desc").value.trim();
-    const valor = parseFloat(document.getElementById("cost-value").value);
-    const tipo = document.getElementById("cost-type").value;
-
-    // Validação simples
-    if (!descricao || isNaN(valor) || !tipo) {
-      alert("Preencha todos os campos de custo corretamente.");
+    const desc = form.querySelector("#cost-desc").value.trim();
+    const valor = parseFloat(form.querySelector("#cost-value").value.replace(",", "."));
+    const tipo = form.querySelector("#cost-type").value;
+    if (!desc || isNaN(valor) || !tipo) {
+      alert("Preencha todos os campos corretamente.");
       return;
     }
-
-    // Estrutura base do custo
-    const novoCusto = {
-      id: Date.now(),
-      descricao,
-      valor,
-      tipo,
-      data: new Date().toISOString()
-    };
-
-    custosHist.push(novoCusto);
-    save(storageKeys.CUSTOS, custosHist);
-
+    const novo = { id: Date.now(), descricao: desc, valor, tipo, data: new Date().toISOString() };
+    custos.push(novo);
+    save(storageKeys.CUSTOS, custos);
     updateCustosListUI();
-    addCostForm.reset();
+    form.reset();
   });
+
+  screenContainer.appendChild(section);
+  updateCustosListUI();
 }
 
-// --- Atualiza visualmente a lista de custos ---
 function updateCustosListUI() {
-  if (!costListContainer) return;
-
-  costListContainer.innerHTML = "";
-
-  if (custosHist.length === 0) {
-    costListContainer.innerHTML = `<p class="text-gray-500">Nenhum custo registrado.</p>`;
+  const cont = document.getElementById("cost-list");
+  if (!cont) return;
+  cont.innerHTML = "";
+  if (!custos || custos.length === 0) {
+    cont.innerHTML = `<p class="text-gray-500">Nenhum custo registrado.</p>`;
     return;
   }
-
-  custosHist.forEach((c) => {
+  custos.forEach((c) => {
     const item = document.createElement("div");
-    item.className =
-      "flex justify-between items-center bg-white p-4 rounded-xl shadow mb-2";
-
+    item.className = "flex justify-between items-center bg-white p-3 rounded-xl mb-2 shadow";
     item.innerHTML = `
       <div>
         <p class="font-semibold">${c.descricao}</p>
-        <p class="text-sm text-gray-600">
-          Tipo: ${c.tipo} — R$ ${c.valor.toFixed(2)}
-        </p>
+        <p class="text-sm text-gray-600">Tipo: ${c.tipo} — ${formatCurrency(c.valor)}</p>
       </div>
-
-      <!-- Botão remover -->
-      <button data-id="${c.id}" class="delete-cost text-red-600 font-bold">X</button>
+      <button class="delete-cost text-xs px-2 py-1 rounded bg-[#F87171] text-white" data-id="${c.id}">Excluir</button>
     `;
-
-    costListContainer.appendChild(item);
+    cont.appendChild(item);
   });
 
-  // Exclusão de custo
-  document.querySelectorAll(".delete-cost").forEach((btn) => {
+  cont.querySelectorAll(".delete-cost").forEach((btn) =>
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-
-      custosHist = custosHist.filter((c) => c.id !== id);
-      save(storageKeys.CUSTOS, custosHist);
-
+      custos = custos.filter((x) => x.id !== id);
+      save(storageKeys.CUSTOS, custos);
       updateCustosListUI();
+    })
+  );
+}
+
+/* ---------------------------
+   TELA: VENDAS (simples)
+   --------------------------- */
+function renderVendas() {
+  clearScreen();
+
+  const section = document.createElement("section");
+  section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
+
+  const header = document.createElement("div");
+  header.className = "flex items-center justify-between pb-2";
+  const title = document.createElement("h2");
+  title.textContent = "Vendas";
+  title.className = "text-xl font-extrabold text-[#3F2A14]";
+  header.appendChild(title);
+  header.appendChild(createBackButton("Voltar", "home"));
+  section.appendChild(header);
+
+  // form simples: select de produto, quantidade
+  const form = document.createElement("form");
+  form.className = "flex flex-col gap-2 mb-3";
+  form.innerHTML = `
+    <select id="venda-produto" class="p-2 border rounded"></select>
+    <input id="venda-quant" type="number" min="1" value="1" class="p-2 border rounded" />
+    <button type="submit" class="bg-[#16A34A] text-white px-4 py-2 rounded">Registrar venda</button>
+  `;
+  section.appendChild(form);
+
+  const listWrap = document.createElement("div");
+  listWrap.id = "vendas-list";
+  section.appendChild(listWrap);
+
+  // popula select
+  function fillSelect() {
+    const sel = form.querySelector("#venda-produto");
+    sel.innerHTML = "";
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "Escolha um produto";
+    sel.appendChild(empty);
+    products.forEach((p) => {
+      const o = document.createElement("option");
+      o.value = p.id;
+      o.textContent = `${p.nome} — ${formatCurrency(p.preco)}`;
+      sel.appendChild(o);
     });
+  }
+  fillSelect();
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const prodId = form.querySelector("#venda-produto").value;
+    const qtd = parseInt(form.querySelector("#venda-quant").value, 10);
+    if (!prodId || isNaN(qtd) || qtd <= 0) {
+      alert("Escolha produto e quantidade válidos.");
+      return;
+    }
+    const prod = findProductById(prodId);
+    if (!prod) {
+      alert("Produto não encontrado.");
+      return;
+    }
+    const total = +(prod.preco * qtd).toFixed(2);
+    const venda = { id: Date.now(), produtoId: prod.id, produtoNome: prod.nome, quantidade: qtd, total_venda: total, created_at: new Date().toISOString() };
+    vendas.push(venda);
+    save(storageKeys.VENDAS, vendas);
+    updateVendasListUI();
+    form.querySelector("#venda-quant").value = 1;
+    form.querySelector("#venda-produto").value = "";
+  });
+
+  screenContainer.appendChild(section);
+  updateVendasListUI();
+}
+
+function updateVendasListUI() {
+  const cont = document.getElementById("vendas-list");
+  if (!cont) return;
+  cont.innerHTML = "";
+  if (!vendas || vendas.length === 0) {
+    cont.innerHTML = `<p class="text-gray-500">Nenhuma venda registrada.</p>`;
+    return;
+  }
+  vendas.slice().reverse().forEach((v) => {
+    const item = document.createElement("div");
+    item.className = "flex justify-between items-center bg-white p-3 rounded-xl mb-2 shadow";
+    item.innerHTML = `
+      <div>
+        <p class="font-semibold">${v.produtoNome}</p>
+        <p class="text-sm text-gray-600">Qtd: ${v.quantidade} — ${formatCurrency(v.total_venda)}</p>
+      </div>
+      <div class="text-xs text-gray-500">${(new Date(v.created_at)).toLocaleString()}</div>
+    `;
+    cont.appendChild(item);
   });
 }
 
-// Renderiza custos ao iniciar
-updateCustosListUI();
-/* ============================================================
-   FUNÇÃO: Preenche selects com a lista de produtos cadastrados
-   - Usada na tela de vendas
-   - Sempre reconstrói as opções com base no currentRecords
-   ============================================================ */
-function fillProdutosSelect(selectEl) {
-  if (!selectEl) return; // Se o elemento não existir, encerra
-  selectEl.replaceChildren(); // Limpa opções anteriores
-
-  // Opção vazia inicial
-  const emptyOpt = document.createElement("option");
-  emptyOpt.value = "";
-  emptyOpt.textContent = "Escolha";
-  selectEl.appendChild(emptyOpt);
-
-  // Filtra os registros do tipo "produto"
-  const produtos = currentRecords.filter((r) => r.registro_tipo === "produto");
-
-  // Adiciona produtos no select
-  produtos.forEach((p) => {
-    const o = document.createElement("option");
-    o.value = p.nome || "";
-    o.textContent = p.nome || "Sem nome";
-    selectEl.appendChild(o);
-  });
-}
-
-/* ============================================================
+/* ---------------------------
    TELA: RELATÓRIOS
-   - Mostra totais de vendas, custos e lucro.
-   - Possui filtro por data
-   - Gera gráfico simples
-   - Exporta relatório TXT
-   ============================================================ */
+   --------------------------- */
 function renderRelatorios() {
   clearScreen();
 
   const section = document.createElement("section");
-  section.className = "flex-1 flex flex-col h-full overflow-auto";
+  section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
 
-  /* ------------ Cabeçalho da tela ------------ */
-  const headerRow = document.createElement("div");
-  headerRow.className = "flex items-center justify-between px-4 pt-4 pb-2";
-
+  const header = document.createElement("div");
+  header.className = "flex items-center justify-between pb-2";
   const title = document.createElement("h2");
-  title.id = "relatorios-title";
+  title.textContent = "Relatórios";
   title.className = "text-xl font-extrabold text-[#3F2A14]";
-  title.textContent =
-    (window.elementSdk && window.elementSdk.config?.relatorios_title) ||
-    defaultConfig.relatorios_title;
+  header.appendChild(title);
+  header.appendChild(createBackButton("Voltar", "home"));
+  section.appendChild(header);
 
-  headerRow.appendChild(title);
-  headerRow.appendChild(createBackButton("Voltar", "home"));
-  section.appendChild(headerRow);
-
-  /* ------------ Conteúdo principal ------------ */
   const content = document.createElement("div");
-  content.className = "flex-1 flex flex-col gap-4 px-4 pb-4";
-
-  /* ============================================================
-       BOX DE FILTRO POR DATA
-     ============================================================ */
-  const filterBox = document.createElement("div");
-  filterBox.className = "rounded-2xl bg-[#F9F0DC] border border-[#D1B38A] p-3";
-
-  const filterTitle = document.createElement("p");
-  filterTitle.className = "text-sm font-bold text-[#3F2A14] mb-2 flex items-center gap-2";
-  filterTitle.innerHTML = "📅 Filtrar por período";
-  filterBox.appendChild(filterTitle);
-
-  /* Formulário de filtro */
-  const filterForm = document.createElement("form");
-  filterForm.className = "flex flex-wrap gap-2 items-end";
-
-  // Cria inputs de data dinamicamente
-  const createDateInput = (id, labelText) => {
-    const wrap = document.createElement("div");
-    wrap.className = "flex flex-col gap-1";
-
-    const label = document.createElement("label");
-    label.className = "text-xs font-bold text-[#3F2A14]";
-    label.setAttribute("for", id);
-    label.textContent = labelText;
-
-    const input = document.createElement("input");
-    input.id = id;
-    input.type = "date";
-    input.className =
-      "rounded-xl border border-[#D1B38A] px-2 py-1 text-sm text-[#3F2A14] bg-[#FDF6E3] focus-ring";
-
-    wrap.append(label, input);
-    return { wrap, input };
-  };
-
-  /* Campos de data */
-  const { wrap: dataInicioWrap, input: dataInicioInput } =
-    createDateInput("filter-data-inicio", "De");
-  const { wrap: dataFimWrap, input: dataFimInput } =
-    createDateInput("filter-data-fim", "Até");
-
-  /* Botão Filtrar */
-  const filterBtn = document.createElement("button");
-  filterBtn.type = "submit";
-  filterBtn.className =
-    "focus-ring rounded-full bg-[#16A34A] text-[#FDF6E3] px-4 py-1 text-sm font-bold hover:bg-[#15803D] transition";
-  filterBtn.textContent = "Filtrar";
-
-  /* Botão Limpar */
-  const clearBtn = document.createElement("button");
-  clearBtn.type = "button";
-  clearBtn.className =
-    "focus-ring rounded-full bg-[#D1B38A] text-[#3F2A14] px-4 py-1 text-sm font-bold hover:bg-[#C79A64] transition";
-  clearBtn.textContent = "Limpar";
-
-  filterForm.append(dataInicioWrap, dataFimWrap, filterBtn, clearBtn);
-  filterBox.appendChild(filterForm);
-  content.appendChild(filterBox);
-
-  /* Estado do filtro */
-  let filtroDataInicio = null;
-  let filtroDataFim = null;
-
-  /* Ao aplicar filtro */
-  filterForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    filtroDataInicio = dataInicioInput.value || null;
-    filtroDataFim = dataFimInput.value || null;
-    updateRelatoriosData();
-  });
-
-  /* Ao limpar filtro */
-  clearBtn.addEventListener("click", () => {
-    dataInicioInput.value = "";
-    dataFimInput.value = "";
-    filtroDataInicio = null;
-    filtroDataFim = null;
-    updateRelatoriosData();
-  });
-
-  /* Contêiner onde os dados do relatório serão exibidos */
-  const dataContainer = document.createElement("div");
-  dataContainer.id = "relatorios-data-container";
-  content.appendChild(dataContainer);
-
+  content.className = "flex-1 flex flex-col gap-4";
   section.appendChild(content);
-  screenContainer.appendChild(section);
 
-  /* ============================================================
-     FUNÇÃO: Atualiza dados dos relatórios com base no filtro
-     ============================================================ */
-  function updateRelatoriosData() {
-    /* Filtra custos e vendas */
-    let custos = currentRecords.filter((r) => r.registro_tipo === "custo");
-    let vendas = currentRecords.filter((r) => r.registro_tipo === "venda");
+  const totalCustos = custos.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+  const totalVendas = vendas.reduce((s, v) => s + (Number(v.total_venda) || 0), 0);
+  const lucro = totalVendas - totalCustos;
 
-    /* Aplicação do filtro de datas */
-    if (filtroDataInicio || filtroDataFim) {
-      custos = custos.filter((c) => {
-        const data = c.data_custo || c.created_at?.slice(0, 10);
-        return (
-          data &&
-          (!filtroDataInicio || data >= filtroDataInicio) &&
-          (!filtroDataFim || data <= filtroDataFim)
-        );
-      });
+  const cards = document.createElement("div");
+  cards.className = "grid grid-cols-1 md:grid-cols-3 gap-3";
+  const makeCard = (t, val, color, icon) => {
+    const c = document.createElement("div");
+    c.className = `rounded-2xl px-3 py-3 text-white ${color}`;
+    c.innerHTML = `<div class="flex items-center justify-between"><p class="text-sm font-bold">${t}</p><span class="text-xl">${icon}</span></div><p class="text-lg font-extrabold mt-2">${formatCurrency(val)}</p>`;
+    return c;
+  };
+  cards.append(makeCard("Total Custos", totalCustos, "bg-[#B45309]", "💸"));
+  cards.append(makeCard("Total Vendas", totalVendas, "bg-[#16A34A]", "🧾"));
+  cards.append(makeCard("Lucro/Prejuízo", lucro, lucro >= 0 ? "bg-[#0F766E]" : "bg-[#B91C1C]", lucro >= 0 ? "📈" : "📉"));
 
-      vendas = vendas.filter((v) => {
-        const data = v.created_at?.slice(0, 10);
-        return (
-          data &&
-          (!filtroDataInicio || data >= filtroDataInicio) &&
-          (!filtroDataFim || data <= filtroDataFim)
-        );
-      });
-    }
+  content.append(cards);
 
-    /* Totais */
-    const totalCustos = custos.reduce(
-      (sum, r) => sum + (parseFloat(r.valor_custo) || 0),
-      0
-    );
-    const totalVendas = vendas.reduce(
-      (sum, r) => sum + (parseFloat(r.total_venda) || 0),
-      0
-    );
-    const lucro = totalVendas - totalCustos;
-
-    /* Limpa container */
-    dataContainer.innerHTML = "";
-
-    /* ============================================================
-       CARDS DE RESUMO
-       ============================================================ */
-    const cardsRow = document.createElement("div");
-    cardsRow.className = "grid grid-cols-1 md:grid-cols-3 gap-3";
-
-    const createCard = (titulo, valor, color, icon) => {
-      const card = document.createElement("div");
-      card.className = `rounded-2xl px-3 py-3 flex flex-col gap-2 text-[#FDF6E3] ${color}`;
-
-      const head = document.createElement("div");
-      head.className = "flex items-center justify-between";
-
-      const label = document.createElement("p");
-      label.className = "text-sm font-bold";
-      label.textContent = titulo;
-
-      const iconSpan = document.createElement("span");
-      iconSpan.className = "text-xl";
-      iconSpan.textContent = icon;
-
-      head.append(label, iconSpan);
-
-      const val = document.createElement("p");
-      val.className = "text-lg font-extrabold";
-      val.textContent = valor;
-
-      card.append(head, val);
-      return card;
-    };
-
-    cardsRow.append(
-      createCard("Total de Custos", formatCurrency(totalCustos), "bg-[#B45309]", "💸"),
-      createCard("Total de Vendas", formatCurrency(totalVendas), "bg-[#16A34A]", "🧾"),
-      createCard(
-        "Lucro / Prejuízo",
-        formatCurrency(lucro),
-        lucro >= 0 ? "bg-[#0F766E]" : "bg-[#B91C1C]",
-        lucro >= 0 ? "📈" : "📉"
-      )
-    );
-
-    dataContainer.appendChild(cardsRow);
-
-    /* ============================================================
-       GRÁFICO SIMPLES
-       ============================================================ */
-    const chartBox = document.createElement("div");
-    chartBox.className =
-      "mt-3 rounded-2xl bg-[#F9F0DC] border border-[#D1B38A] p-4 flex flex-col gap-3";
-
-    const chartTitle = document.createElement("p");
-    chartTitle.className =
-      "text-base font-extrabold text-[#3F2A14] flex items-center gap-2";
-    chartTitle.innerHTML = "📊 Visual simples";
-    chartBox.appendChild(chartTitle);
-
-    const chartArea = document.createElement("div");
-    chartArea.className = "flex items-end gap-4 h-40 justify-center";
-
-    const maxVal = Math.max(totalCustos, totalVendas, 1);
-
-    const createBar = (label, valor, color) => {
-      const wrap = document.createElement("div");
-      wrap.className = "flex flex-col items-center gap-1 flex-1";
-
-      const bar = document.createElement("div");
-      bar.className = `w-10 md:w-16 rounded-t-xl ${color}`;
-      bar.style.height = `${(valor / maxVal) * 100}%`;
-
-      const valText = document.createElement("p");
-      valText.className = "text-xs text-[#3F2A14] font-bold";
-      valText.textContent = formatCurrency(valor);
-
-      const lab = document.createElement("p");
-      lab.className = "text-xs text-[#3F2A14]";
-      lab.textContent = label;
-
-      wrap.append(bar, valText, lab);
-      return wrap;
-    };
-
-    chartArea.append(
-      createBar("Custos", totalCustos, "bg-[#B45309]"),
-      createBar("Vendas", totalVendas, "bg-[#16A34A]")
-    );
-
-    chartBox.appendChild(chartArea);
-
-    const resumoText = document.createElement("p");
-    resumoText.className = "text-sm text-[#3F2A14] font-bold mt-1";
-    resumoText.textContent =
-      totalCustos === 0 && totalVendas === 0
-        ? "Sem dados ainda. Registre custos e vendas para ver o resumo."
-        : lucro >= 0
-        ? "Situação: lucro."
-        : "Situação: prejuízo.";
-
-    chartBox.appendChild(resumoText);
-    dataContainer.appendChild(chartBox);
-
-    /* ============================================================
-       EXPORTAR TXT
-       ============================================================ */
-    const exportBox = document.createElement("div");
-    exportBox.className = "mt-3 flex justify-center";
-
-    const exportBtn = document.createElement("button");
-    exportBtn.type = "button";
-    exportBtn.className =
-      "focus-ring inline-flex items-center gap-2 rounded-full bg-[#FBBF24] px-5 py-2.5 text-base font-extrabold text-[#3F2A14] shadow hover:bg-[#f59e0b] transition";
-    exportBtn.innerHTML = "📥 Exportar Relatório (TXT)";
-
-    exportBtn.addEventListener("click", () => {
-      const periodo =
-        filtroDataInicio || filtroDataFim
-          ? `Período: ${filtroDataInicio || "início"} até ${
-              filtroDataFim || "hoje"
-            }\n`
-          : "Período: Todos os registros\n";
-
-      let txt = `=== RELATÓRIO AGROFÁCIL ===\n\n${periodo}Total de Custos: ${formatCurrency(
-        totalCustos
-      )}\nTotal de Vendas: ${formatCurrency(
-        totalVendas
-      )}\nLucro/Prejuízo: ${formatCurrency(lucro)}\n\n--- CUSTOS ---\n`;
-
-      custos.forEach((c) => {
-        txt += `${c.tipo_custo || "Outro"} - ${formatCurrency(
-          c.valor_custo || 0
-        )} - ${c.data_custo || ""}\n`;
-      });
-
-      txt += "\n--- VENDAS ---\n";
-
-      vendas.forEach((v) => {
-        txt += `${v.produto || "Produto"} - Qtd: ${
-          v.quantidade || 0
-        } - ${formatCurrency(v.total_venda || 0)}\n`;
-      });
-
-      const blob = new Blob([txt], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "relatorio_agrofacil.txt";
-      a.click();
-
-      URL.revokeObjectURL(url);
+  // exportar txt
+  const exportBtn = document.createElement("button");
+  exportBtn.className = "mt-3 inline-flex items-center gap-2 rounded-full bg-[#FBBF24] px-5 py-2.5 text-base font-extrabold text-[#3F2A14]";
+  exportBtn.textContent = "📥 Exportar Relatório (TXT)";
+  exportBtn.addEventListener("click", () => {
+    let txt = `=== RELATÓRIO AGROFÁCIL ===\n\nTotal de Custos: ${formatCurrency(totalCustos)}\nTotal de Vendas: ${formatCurrency(totalVendas)}\nLucro/Prejuízo: ${formatCurrency(lucro)}\n\n--- CUSTOS ---\n`;
+    custos.forEach((c) => {
+      txt += `${c.tipo || "Outro"} - ${formatCurrency(c.valor)} - ${c.data || ""}\n`;
     });
+    txt += "\n--- VENDAS ---\n";
+    vendas.forEach((v) => {
+      txt += `${v.produtoNome || "Produto"} - Qtd: ${v.quantidade || 0} - ${formatCurrency(v.total_venda)} - ${(new Date(v.created_at)).toLocaleString()}\n`;
+    });
+    const blob = new Blob([txt], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "relatorio_agrofacil.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
 
-    exportBox.appendChild(exportBtn);
-    dataContainer.appendChild(exportBox);
-  }
+  content.append(exportBtn);
 
-  /* Chama função inicial para desenhar relatório */
-  updateRelatoriosData();
+  screenContainer.appendChild(section);
 }
 
-/* ============================================================
-   TELA DE CONFIGURAÇÕES
-   - Botões para Ajuda, Suporte e Sobre
-   ============================================================ */
+/* ---------------------------
+   TELA: CONFIGURAÇÕES e SUporte/Sobre/Ajuda
+   --------------------------- */
 function renderConfig() {
   clearScreen();
 
   const section = document.createElement("section");
-  section.className = "flex-1 flex flex-col h-full";
-
-  const headerRow = document.createElement("div");
-  headerRow.className = "flex items-center justify-between px-4 pt-4 pb-2";
-
-  const title = document.createElement("h2");
-  title.id = "config-title";
-  title.className = "text-xl font-extrabold text-[#3F2A14]";
-  title.textContent =
-    (window.elementSdk && window.elementSdk.config?.config_title) ||
-    defaultConfig.config_title;
-
-  headerRow.appendChild(title);
-  headerRow.appendChild(createBackButton("Voltar", "home"));
-  section.appendChild(headerRow);
-
-  const content = document.createElement("div");
-  content.className =
-    "flex-1 flex flex-col gap-4 px-4 pb-4 items-center justify-center";
-
-  /* Botão básico de config */
-  function createConfigButton(id, text, icon) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = id;
-    btn.className =
-      "focus-ring w-full max-w-xs inline-flex items-center justify-between rounded-3xl bg-[#16A34A] px-5 py-3 text-lg font-extrabold text-[#FDF6E3] shadow-lg hover:bg-[#15803D] transition";
-    btn.innerHTML = `<span class="flex items-center gap-2">${icon} ${text}</span>`;
-    return btn;
-  }
-
-  /* Botões */
-  const ajudaBtn = createConfigButton(
-    "cfg-ajuda-audio",
-    (window.elementSdk && window.elementSdk.config?.ajuda_audio_label) ||
-      defaultConfig.ajuda_audio_label,
-    "🔊"
-  );
-
-  const supBtn = createConfigButton(
-    "cfg-suporte",
-    (window.elementSdk && window.elementSdk.config?.suporte_label) ||
-      defaultConfig.suporte_label,
-    "🤝"
-  );
-
-  const sobreBtn = createConfigButton(
-    "cfg-sobre",
-    (window.elementSdk && window.elementSdk.config?.sobre_label) ||
-      defaultConfig.sobre_label,
-    "ℹ️"
-  );
-
-  const info = document.createElement("p");
-  info.className = "mt-3 text-sm text-center text-[#3F2A14] max-w-xs";
-  info.textContent =
-    "Esses botões abrem telas reais no app, podendo ser substituídas por conteúdo funcional.";
-
-  content.append(ajudaBtn, supBtn, sobreBtn, info);
-  section.appendChild(content);
-  screenContainer.appendChild(section);
-
-  /* Eventos */
-  ajudaBtn.addEventListener("click", () => renderAjudaScreen());
-  supBtn.addEventListener("click", () => renderSuporteScreen());
-  sobreBtn.addEventListener("click", () => renderSobreScreen());
-}
-
-/* ============================================================
-   TELA: AJUDA
-   ============================================================ */
-function renderAjudaScreen() {
-  clearScreen();
-
-  const section = document.createElement("section");
-  section.className = "flex-1 flex flex-col h-full px-4 py-4";
+  section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
 
   const header = document.createElement("div");
   header.className = "flex items-center justify-between pb-2";
+  const title = document.createElement("h2");
+  title.textContent = "Configurações";
+  title.className = "text-xl font-extrabold text-[#3F2A14]";
+  header.appendChild(title);
+  header.appendChild(createBackButton("Voltar", "home"));
+  section.appendChild(header);
 
+  const content = document.createElement("div");
+  content.className = "flex-1 flex flex-col gap-4 items-center justify-start";
+
+  const btn = (lbl, fn) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "w-full max-w-xs inline-flex items-center justify-between rounded-3xl bg-[#16A34A] px-5 py-3 text-lg font-extrabold text-[#FDF6E3]";
+    b.textContent = lbl;
+    b.addEventListener("click", fn);
+    return b;
+  };
+
+  content.append(btn("Ajuda", renderAjudaScreen), btn("Suporte", renderSuporteScreen), btn("Sobre", renderSobreScreen));
+  section.appendChild(content);
+  screenContainer.appendChild(section);
+}
+
+function renderAjudaScreen() {
+  clearScreen();
+  const section = document.createElement("section");
+  section.className = "flex-1 flex flex-col h-full px-4 py-4";
+  const header = document.createElement("div");
+  header.className = "flex items-center justify-between pb-2";
   const title = document.createElement("h2");
   title.textContent = "Ajuda";
   title.className = "text-xl font-extrabold text-[#3F2A14]";
-
   header.appendChild(title);
   header.appendChild(createBackButton("Voltar", "config"));
   section.appendChild(header);
 
   const content = document.createElement("div");
-  content.innerHTML =
-    "<p class='text-[#3F2A14]'>Aqui vou colocar tutoriais, vídeos ou áudios de ajuda.</p>";
+  content.innerHTML = `<p class="text-[#3F2A14]">Aqui você encontrará tutoriais e instruções.</p>`;
   section.appendChild(content);
-
   screenContainer.appendChild(section);
 }
 
-/* ============================================================
-   TELA: SUPORTE
-   ============================================================ */
 function renderSuporteScreen() {
   clearScreen();
-
   const section = document.createElement("section");
   section.className = "flex-1 flex flex-col h-full px-4 py-4";
 
   const header = document.createElement("div");
   header.className = "flex items-center justify-between pb-2";
-
   const title = document.createElement("h2");
   title.textContent = "Suporte";
   title.className = "text-xl font-extrabold text-[#3F2A14]";
-
   header.appendChild(title);
   header.appendChild(createBackButton("Voltar", "config"));
   section.appendChild(header);
 
   const content = document.createElement("div");
+  content.className = "flex flex-col gap-2";
   content.innerHTML = `
     <input id="support-email" type="email" placeholder="Seu e-mail" class="mb-2 p-2 border rounded w-full" />
     <textarea id="support-message" placeholder="Sua mensagem" class="mb-2 p-2 border rounded w-full"></textarea>
+    <div class="flex gap-2">
+      <button id="support-send" class="bg-[#16A34A] text-white px-4 py-2 rounded">Enviar</button>
+      <button id="support-cancel" class="bg-[#D1B38A] px-4 py-2 rounded">Cancelar</button>
+    </div>
   `;
-
-  const enviarBtn = document.createElement("button");
-  enviarBtn.textContent = "Enviar";
-  enviarBtn.className = "bg-green-600 text-white px-4 py-2 rounded";
-
-  content.appendChild(enviarBtn);
   section.appendChild(content);
   screenContainer.appendChild(section);
 
-  enviarBtn.addEventListener("click", enviarMensagemSuporte);
-}
+  // eventos
+  document.getElementById("support-send").addEventListener("click", async () => {
+    const email = document.getElementById("support-email").value.trim();
+    const msg = document.getElementById("support-message").value.trim();
+    if (!email || !msg) {
+      alert("Preencha e-mail e mensagem.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert("Digite um e-mail válido.");
+      return;
+    }
 
-/* ============================================================
-   FUNÇÃO: Envia mensagem de suporte
-   - Chama API no Render
-   ============================================================ */
-async function enviarMensagemSuporte() {
-  const emailInput = document.getElementById("support-email");
-  const msgInput = document.getElementById("support-message");
-
-  if (!emailInput || !msgInput) {
-    alert("Formulário não encontrado.");
-    return;
-  }
-
-  const email = emailInput.value.trim();
-  const message = msgInput.value.trim();
-
-  if (!email || !message) {
-    alert("Preencha todos os campos antes de enviar.");
-    return;
-  }
-
-  /* Regex básico para validar e-mail */
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!emailRegex.test(email)) {
-    alert("Digite um e-mail válido.");
-    return;
-  }
-
-  /* Envio da mensagem */
-  try {
-    const response = await fetch(
-      "https://agrofacil-api.onrender.com/send-support",
-      {
+    // Tenta enviar para endpoint (se configurado), senão simula sucesso
+    try {
+      // Se quiser desativar o envio real, comente o fetch abaixo
+      const response = await fetch("https://agrofacil-api.onrender.com/send-support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, message }),
-      }
-    );
+        body: JSON.stringify({ email, message: msg }),
+      });
 
-    if (response.ok) {
+      if (!response.ok) throw new Error("Falha no envio");
       alert("Mensagem enviada com sucesso!");
-      renderConfig();
-    } else {
-      throw new Error("Erro ao enviar mensagem");
+      navigateTo("config");
+    } catch (err) {
+      // fallback: simula envio
+      console.warn("Envio real falhou (ou endpoint inacessível). Simulando envio.", err);
+      alert("Mensagem simulada como enviada (não foi possível contactar o servidor).");
+      navigateTo("config");
     }
-  } catch (err) {
-    alert("Falha no envio. Tente novamente mais tarde.");
-    console.error(err);
-  }
+  });
+
+  document.getElementById("support-cancel").addEventListener("click", () => navigateTo("config"));
 }
 
-/* ============================================================
-   TELA: SOBRE O APLICATIVO
-   ============================================================ */
 function renderSobreScreen() {
   clearScreen();
-
   const section = document.createElement("section");
   section.className = "flex-1 flex flex-col h-full px-4 py-4";
-
   const header = document.createElement("div");
   header.className = "flex items-center justify-between pb-2";
-
   const title = document.createElement("h2");
   title.textContent = "Sobre";
   title.className = "text-xl font-extrabold text-[#3F2A14]";
-
   header.appendChild(title);
   header.appendChild(createBackButton("Voltar", "config"));
   section.appendChild(header);
 
   const content = document.createElement("div");
   content.className = "text-[#3F2A14] flex flex-col gap-2";
-
   content.innerHTML = `
     <p><strong>Nome do App:</strong> AgroFácil</p>
     <p><strong>Versão:</strong> 1.0.0</p>
     <p><strong>Desenvolvedora:</strong> Raymora Katielle de Almeida Silva</p>
     <p><strong>Contato:</strong> Raymorakatielly@gmail.com</p>
-    <p><strong>Descrição:</strong> Este app ajuda agricultores a gerenciar suas atividades de forma digital, com controle de vendas, estoque e suporte técnico.</p>
   `;
-
   section.appendChild(content);
   screenContainer.appendChild(section);
 }
 
-/* ============================================================
-   SDK: Inicialização do DATA SDK (se existir)
-   - Mantém listas sincronizadas
-   ============================================================ */
-async function initDataSdkIfPresent() {
-  if (!window.dataSdk) return;
+/* ---------------------------
+   Inicialização
+   --------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  screenContainer = document.getElementById("screen-container");
+  appTitleEl = document.getElementById("app-title");
+  homeSubtitleEl = document.getElementById("home-subtitle");
 
-  try {
-    await window.dataSdk.init({
-      onDataChanged: (data) => {
-        currentRecords = Array.isArray(data) ? data : [];
-
-        // Atualiza listas se estiverem na tela atual
-        const ulProdutos = document.getElementById("produtos-list");
-        if (ulProdutos) updateProdutosListUI(ulProdutos);
-
-        const ulCustos = document.getElementById("custos-list");
-        if (ulCustos) updateCustosListUI(ulCustos);
-
-        const ulVendas = document.getElementById("vendas-list");
-        if (ulVendas) updateVendasListUI(ulVendas);
-
-        // Atualiza select de produtos
-        const sel = document.getElementById("venda-produto");
-        if (sel) fillProdutosSelect(sel);
-      },
+  // botão configurar (no header)
+  const btnOpenConfig = document.getElementById("btn-open-config");
+  if (btnOpenConfig) {
+    btnOpenConfig.addEventListener("click", (e) => {
+      e.preventDefault();
+      navigateTo("config");
     });
-  } catch (err) {
-    console.warn("dataSdk init falhou:", err);
   }
-}
 
-/* ============================================================
-   SDK: Inicialização do ELEMENT SDK
-   - Atualiza títulos dinâmicos do app
-   ============================================================ */
-function initElementSdkIfPresent() {
-  if (!window.elementSdk) return;
+  // Expor navigateTo globalmente (index.html já usa)
+  window.navigateTo = navigateTo;
 
-  try {
-    const cfg = window.elementSdk.config || {};
-
-    if (cfg.app_title && appTitleEl) appTitleEl.textContent = cfg.app_title;
-    if (cfg.home_subtitle && homeSubtitleEl)
-      homeSubtitleEl.textContent = cfg.home_subtitle;
-
-  } catch (err) {
-    console.warn("elementSdk read failed", err);
-  }
-}
-/* ============================================================
-   TELA: HOME
-   ============================================================ */
-function renderHome() {
-  const container = document.getElementById("screen-container");
-  container.innerHTML = `
-    <div class="p-6 text-center">
-      <h2 class="text-xl font-bold text-[#3F2A14]">Bem-vindo ao AgroFácil</h2>
-      <p class="mt-2 text-[#5C4A32]">Escolha uma função no menu.</p>
-    </div>
-  `;
-}
+  // Primeira tela
+  navigateTo("home");
+});
 
