@@ -98,7 +98,7 @@
         case "config": renderConfig(); break;
       }
     }
-
+    const btnOpenConfig = document.getElementById("btn-open-config");
     btnOpenConfig.addEventListener("click", (e) => {
       e.preventDefault();
       navigateTo("config");
