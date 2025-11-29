@@ -94,7 +94,7 @@ async function saveCustoToSupabase(custo) {
 
 async function loadProductsFromSupabase() {
   try {
-    const { data, error } = await supabase.from('produtos').select('*');
+    const { data, error } = await supabase.from('produto').select('*');
     if (error) throw error;
     if (data) {
       products = data.map(p => ({ id: p.id || Date.now(), nome: p.nome, preco: p.preco, synced: true }));
@@ -107,7 +107,7 @@ async function loadProductsFromSupabase() {
 
 async function loadVendasFromSupabase() {
   try {
-    const { data, error } = await supabase.from('vendas').select('*');
+    const { data, error } = await supabase.from('venda').select('*');
     if (error) throw error;
     if (data) {
       vendas = data.map(v => ({
@@ -128,7 +128,7 @@ async function loadVendasFromSupabase() {
 
 async function loadCustosFromSupabase() {
   try {
-    const { data, error } = await supabase.from('custos').select('*');
+    const { data, error } = await supabase.from('custo').select('*');
     if (error) throw error;
     if (data) {
       custos = data.map(c => ({
