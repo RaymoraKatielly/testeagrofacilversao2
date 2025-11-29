@@ -60,7 +60,7 @@ let currentScreen = "home";
 let screenContainer = null;
 
 /* ---------------------------
-   Supabase helpers
+   Supabase helpers - colunas das tabelas
 --------------------------- */
 async function saveProductToSupabase(produto) {
   try {
