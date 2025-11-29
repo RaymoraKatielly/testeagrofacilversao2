@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html lang="pt-BR">
 <head>
   <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
@@ -7,115 +8,78 @@
   <title>AgroFácil - Protótipo</title>
 
   <!-- Manifest PWA -->
+
   <link rel="manifest" href="manifest.json">
 
   <!-- Tailwind CSS -->
+
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- CSS local -->
+
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body class="h-full w-full m-0 p-0">
 
-  <!-- =========================================================
-       ESTRUTURA PRINCIPAL DO APLICATIVO
-       ----------------------------------------------------------
-       app-root → Centraliza tudo na tela
-       app-shell → Container principal do app
-       ========================================================= -->
+  <!-- Estrutura principal do aplicativo -->
+
   <div id="app-root" class="app-wrapper bg-[#8B5A2B] flex items-center justify-center">
     <div id="app-shell" class="w-full h-full max-w-3xl mx-auto bg-[#FDF6E3] rounded-2xl shadow-xl flex flex-col">
 
-      <!-- =========================================================
-           CABEÇALHO
-           ----------------------------------------------------------
-           Contém o título, logo e botão de configurações
-           ========================================================= -->
-      <header class="flex items-center justify-between px-6 py-4 border-b border-[#D1B38A] bg-[#F9F0DC]" role="banner">
-        <div class="flex items-center gap-2">
-          <div class="w-10 h-10 rounded-full bg-[#16A34A] flex items-center justify-center" aria-hidden="true">
-            <svg viewBox="0 0 24 24" class="w-7 h-7 text-[#FDF6E3]">
-              <path fill="none" stroke="currentColor" d="M5 19C5 9 11 5 19 5c0 8-4 14-14 14zM9 15c1 .5 2 1 3 1.5"/>
-            </svg>
-          </div>
+```
+  <!-- Cabeçalho -->
+  <header class="flex items-center justify-between px-6 py-4 border-b border-[#D1B38A] bg-[#F9F0DC]" role="banner">
+    <div class="flex items-center gap-2">
+      <div class="w-10 h-10 rounded-full bg-[#16A34A] flex items-center justify-center" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="w-7 h-7 text-[#FDF6E3]">
+          <path fill="none" stroke="currentColor" d="M5 19C5 9 11 5 19 5c0 8-4 14-14 14zM9 15c1 .5 2 1 3 1.5"/>
+        </svg>
+      </div>
 
-          <div class="flex flex-col">
-            <h1 id="app-title" class="text-2xl font-extrabold tracking-wide text-[#3F2A14]">
-              AgroFácil
-            </h1>
-            <p id="home-subtitle" class="text-sm text-[#5C4A32]">
-              Controle simples de custos e vendas
-            </p>
-          </div>
-        </div>
-
-        <!-- Botão que abre configurações -->
-        <button id="btn-open-config" type="button"
-  class="focus-ring inline-flex items-center justify-center rounded-full bg-[#FBBF24] p-2 text-[#3F2A14] shadow-md hover:bg-[#f59e0b] transition"
-  aria-label="Abrir configurações">
-  
-  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="3"></circle>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.19.53.19 1.12 0 1.65a1.65 1.65 0 0 0 0 1.82z"/>
-  </svg>
-</button>
-
-</header>
-
-      <!-- =========================================================
-           CONTEÚDO PRINCIPAL
-           ----------------------------------------------------------
-           Aqui é onde cada tela (home, produtos, vendas etc.)
-           aparece.
-           ========================================================= -->
-      <main id="main-content" class="flex-1 overflow-hidden" role="main" aria-live="polite">
-        <div id="screen-container" class="w-full h-full flex flex-col"></div>
-      </main>
-
-      <!-- =========================================================
-           RODAPÉ
-           ========================================================= -->
-      <footer class="px-4 py-2 border-t border-[#D1B38A] bg-[#F9F0DC] text-center text-xs text-[#5C4A32]" role="contentinfo">
-        Toques grandes, passos curtos, uso fácil no campo.
-      </footer>
-
+      <div class="flex flex-col">
+        <h1 id="app-title" class="text-2xl font-extrabold tracking-wide text-[#3F2A14]">
+          AgroFácil
+        </h1>
+        <p id="home-subtitle" class="text-sm text-[#5C4A32]">
+          Controle simples de custos e vendas
+        </p>
+      </div>
     </div>
+
+    <!-- Botão que abre configurações -->
+    <button id="btn-open-config" type="button"
+            class="focus-ring inline-flex items-center justify-center rounded-full bg-[#FBBF24] p-2 text-[#3F2A14] shadow-md hover:bg-[#f59e0b] transition"
+            aria-label="Abrir configurações">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle> <!-- configurações para forma a engrenagem-->
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.19.53.19 1.12 0 1.65a1.65 1.65 0 0 0 0 1.82z"/>
+      </svg>
+    </button>
+
+  </header>
+
+  <!-- Conteúdo principal -->
+  <main id="main-content" class="flex-1 overflow-hidden" role="main" aria-live="polite">
+    <div id="screen-container" class="w-full h-full flex flex-col"></div>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="px-4 py-2 border-t border-[#D1B38A] bg-[#F9F0DC] text-center text-xs text-[#5C4A32]" role="contentinfo">
+    Toques grandes, passos curtos, uso fácil no campo.
+  </footer>
+
+</div>
+```
+
   </div>
-  <!-- =========================================================
-       SISTEMA DE NAVEGAÇÃO
-       ========================================================= -->
-<!-- app.js deve carregar ANTES -->
-<script src="js/app.js"></script>
-<script>
-function navigateTo(screenKey) {
-  currentScreen = screenKey;
 
-  switch (screenKey) {
-    case "home": renderHome(); break;
-    case "produtos": renderProdutos(); break;
-    case "custos": renderCustos(); break;
-    case "vendas": renderVendas(); break;
-    case "relatorios": renderRelatorios(); break;
-    case "config": renderConfig(); break;
-  }
-}
+  <!-- Carrega o app.js como módulo (importa supabase, navegação e renderização de telas) -->
 
-document.addEventListener("DOMContentLoaded", () => {
-  const btnOpenConfig = document.getElementById("btn-open-config");
+  <script type="module" src="js/app.js"></script>
 
-  btnOpenConfig.addEventListener("click", (e) => {
-    e.preventDefault();
-    navigateTo("config");
-  });
+  <!-- Service Worker (PWA) -->
 
-  navigateTo("home");
-});
-</script>
-
-  <!-- =========================================================
-       SERVICE WORKER (PWA)
-       ========================================================= -->
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
@@ -127,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
 
 
 
