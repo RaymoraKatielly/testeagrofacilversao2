@@ -197,6 +197,7 @@ function navigateTo(screenKey) {
     case "vendas": renderVendas(); break;
     case "relatorios": renderRelatorios(); break;
     case "config": renderConfig(); break;
+    case "suporte": renderSuporte(); break;
     default: renderHome();
   }
 }
@@ -524,6 +525,7 @@ function renderConfig() {
   title.className = "text-xl font-extrabold text-[#3F2A14]";
   section.appendChild(title);
 
+  // Sincronização automática
   const label = document.createElement("label");
   label.textContent = "Sincronização automática:";
   label.className = "mt-4 flex items-center gap-2";
@@ -538,8 +540,78 @@ function renderConfig() {
 
   label.appendChild(checkbox);
   section.appendChild(label);
+
+  // Botão SUPORTE
+  const supportBtn = document.createElement("button");
+  supportBtn.textContent = "Suporte";
+  supportBtn.className = "mt-6 bg-[#16A34A] text-white px-4 py-2 rounded-full hover:opacity-90";
+  supportBtn.addEventListener("click", () => navigateTo("suporte"));
+  section.appendChild(supportBtn);
+
   section.appendChild(createBackButton());
   screenContainer.appendChild(section);
+}
+
+function renderSuporte() {
+  clearScreen();
+
+  const section = document.createElement("section");
+  section.className = "flex-1 flex flex-col h-full overflow-auto p-4";
+
+  const title = document.createElement("h2");
+  title.textContent = "Suporte";
+  title.className = "text-xl font-extrabold text-[#3F2A14]";
+  section.appendChild(title);
+
+  // Formulário
+  const form = document.createElement("form");
+  form.className = "mt-4 flex flex-col gap-3";
+
+  form.innerHTML = `
+    <input id="support-email" type="email" placeholder="Seu email" class="p-2 border rounded" />
+    <textarea id="support-message" placeholder="Descreva seu problema" class="p-2 border rounded h-32"></textarea>
+    <button type="submit" class="bg-[#16A34A] text-white px-4 py-2 rounded-full">Enviar</button>
+  `;
+
+  section.appendChild(form);
+
+  // Botão voltar
+  section.appendChild(createBackButton("Voltar", "config"));
+
+  screenContainer.appendChild(section);
+
+  // Envio para API
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById("support-email").value.trim();
+    const message = document.getElementById("support-message").value.trim();
+
+    if (!email || !message) {
+      alert("Preencha todos os campos.");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://agrofacil-api.onrender.com/send-support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, message })
+      });
+
+      const result = await response.json();
+
+      if (result.status === "ok") {
+        alert("Mensagem enviada com sucesso!");
+        navigateTo("config");
+      } else {
+        alert("Erro ao enviar: " + (result.error || "Tente novamente."));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao conectar com o servidor.");
+    }
+  });
 }
 
 /* ---------------------------
