@@ -301,92 +301,80 @@ screenContainer.appendChild(sec);
 --------------------------- */
 function renderProdutos() {
   clearScreen();
-  const section = document.createElement("section");
-  section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
-  const header = document.createElement("div");
-  header.className = "flex items-center justify-between pb-2";
+
+  const sec = document.createElement("section");
+  sec.className = "flex-1 flex flex-col h-full overflow-auto p-6";
+
   const title = document.createElement("h2");
+  title.className = "text-2xl font-extrabold text-[#3F2A14]";
   title.textContent = "Produtos";
-  title.className = "text-xl font-extrabold text-[#3F2A14]";
-  header.append(title, createBackButton());
-  section.appendChild(header);
 
-  const form = document.createElement("form");
-  form.className = "flex gap-2 items-center w-full mb-3";
-  form.innerHTML = `
-    <input id="product-name" placeholder="Nome do produto" class="flex-1 p-2 border rounded" />
-    <input id="product-price" placeholder="Preço (ex: 10.50)" class="w-32 p-2 border rounded" />
-    <button type="submit" class="bg-[#16A34A] text-white px-4 py-2 rounded">Adicionar</button>
-  `;
-  section.appendChild(form);
+  const subtitle = document.createElement("p");
+  subtitle.className = "mt-2 text-[#5C4A32]";
+  subtitle.textContent = "Gerencie seus produtos cadastrados.";
 
-  const listWrap = document.createElement("div"); listWrap.id = "product-list";
-  section.appendChild(listWrap);
+  const cont = document.createElement("div");
+  cont.id = "product-list";
+  cont.className = "mt-6 flex flex-col gap-2";
 
-  form.addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    const nome = form.querySelector("#product-name").value.trim();
-    const preco = parseFloat(form.querySelector("#product-price").value.replace(",","."));
-    if(!nome || isNaN(preco)){ alert("Preencha nome e preço corretamente."); return; }
-    const novo = { id: Date.now(), nome, preco, synced: navigator.onLine };
-    products.push(novo);
-    save(storageKeys.PRODUTOS, products);
-    updateProductListUI();
-    if(navigator.onLine) await saveProductToSupabase(novo);
-    form.reset();
+  sec.append(title, subtitle, cont);
+  screenContainer.appendChild(sec);
+
+  // Garante que cada produto tem um ID
+  products.forEach((prod, index) => {
+    if (prod.id == null) prod.id = index + 1;
   });
 
-  screenContainer.appendChild(section);
+  function updateProductListUI() {
+    cont.innerHTML = "";
+    products.forEach((prod) => {
+      const div = document.createElement("div");
+      div.className = "product-item flex justify-between items-center p-2 border-b rounded";
+
+      div.innerHTML = `
+        <span>${prod.name}</span>
+        <div class="flex gap-2">
+          <button class="edit-product bg-blue-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Editar</button>
+          <button class="delete-product bg-red-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Excluir</button>
+        </div>
+      `;
+
+      cont.appendChild(div);
+    });
+
+    // Botões de delete
+    cont.querySelectorAll(".delete-product").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = Number(btn.dataset.id);
+        if (isNaN(id)) return console.error("ID inválido:", btn.dataset.id);
+
+        products = products.filter((x) => x.id !== id);
+        save(storageKeys.PRODUTOS, products);
+        updateProductListUI();
+
+        if (navigator.onLine) {
+          try {
+            await supabase.from("produtos").delete().eq("id", id);
+            console.log("Produto deletado no Supabase:", id);
+          } catch (e) {
+            console.warn("Erro delete Supabase", e);
+          }
+        }
+      });
+    });
+
+    // Botões de editar
+    cont.querySelectorAll(".edit-product").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = Number(btn.dataset.id);
+        const produto = products.find((p) => p.id === id);
+        if (!produto) return;
+        console.log("Editar produto:", produto);
+      });
+    });
+  }
+
   updateProductListUI();
-}
-
-function updateProductListUI(){
-  const cont = document.getElementById("product-list");
-  if(!cont) return;
-  cont.innerHTML = "";
-  if(!products || products.length===0){ cont.innerHTML = `<p class="text-gray-500">Nenhum produto cadastrado.</p>`; return; }
-  products.forEach((p,idx)=>{
-    const item = document.createElement("div");
-    item.className="flex justify-between items-center bg-white p-3 rounded-xl mb-2 shadow";
-    item.innerHTML=`
-      <div>
-        <p class="font-semibold">${p.nome}</p>
-        <p class="text-sm text-gray-600">${formatCurrency(p.preco)}</p>
-      </div>
-      <div class="flex gap-2 items-center">
-        <button class="edit-product text-xs px-2 py-1 rounded bg-[#D1B38A]">Editar</button>
-        <button class="delete-product text-xs px-2 py-1 rounded bg-[#F87171] text-white" data-id="${p.id}">Excluir</button>
-      </div>
-    `;
-    cont.appendChild(item);
-  });
-
-  cont.querySelectorAll(".delete-product").forEach(btn=>{
-    btn.addEventListener("click", async ()=>{
-      const id = Number(btn.dataset.id);
-      products = products.filter(x=>x.id!==id);
-      save(storageKeys.PRODUTOS, products);
-      updateProductListUI();
-      if(navigator.onLine) try{ await supabase.from('produtos').delete().eq('id',id); }catch(e){console.warn("Erro delete Supabase",e);}
-    });
-  });
-
-  cont.querySelectorAll(".edit-product").forEach((btn,idx)=>{
-    btn.addEventListener("click", async ()=>{
-      const p = products[idx];
-      const novoNome = prompt("Editar nome do produto:", p.nome);
-      if(novoNome===null) return;
-      const novoPreco = prompt("Editar preço:", p.preco);
-      if(novoPreco===null) return;
-      const precoNum = parseFloat(novoPreco.replace(",","."));
-      if(!novoNome.trim() || isNaN(precoNum)){ alert("Dados inválidos."); return; }
-      p.nome = novoNome.trim(); p.preco = precoNum;
-      p.synced = navigator.onLine;
-      save(storageKeys.PRODUTOS, products);
-      updateProductListUI();
-      if(navigator.onLine) try{ await supabase.from('produtos').update({nome:p.nome,preco:p.preco}).eq('id',p.id); }catch(e){console.warn("Erro update Supabase",e);}
-    });
-  });
 }
 
 /* ---------------------------
