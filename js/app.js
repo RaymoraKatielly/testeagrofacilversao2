@@ -562,16 +562,6 @@ function renderSuporte() {
   title.className = "text-xl font-extrabold text-[#3F2A14]";
   section.appendChild(title);
 
-  // BOTÃO ABRIR CONFIGURAÇÕES
-document.getElementById("btn-open-config").addEventListener("click", () => {
-  document.getElementById("config-panel").classList.remove("translate-x-full");
-});
-
-// BOTÃO FECHAR CONFIGURAÇÕES
-document.getElementById("btn-close-config").addEventListener("click", () => {
-  document.getElementById("config-panel").classList.add("translate-x-full");
-});
-
   // Formulário
   const form = document.createElement("form");
   form.className = "mt-4 flex flex-col gap-3";
