@@ -637,3 +637,29 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   window.navigateTo = navigateTo;
   navigateTo("home");
 });
+
+function initConfigButtons() {
+  const btnOpen = document.getElementById("btn-open-config");
+  const btnClose = document.getElementById("btn-close-config");
+  const panel = document.getElementById("config-panel");
+
+  if (!btnOpen || !btnClose || !panel) {
+    console.warn("Botões ou painel não encontrados, tentando novamente...");
+    setTimeout(initConfigButtons, 300); // tenta novamente quando a tela mudar
+    return;
+  }
+
+  btnOpen.addEventListener("click", () => {
+    panel.classList.remove("translate-x-full");
+  });
+
+  btnClose.addEventListener("click", () => {
+    panel.classList.add("translate-x-full");
+  });
+
+  console.log("Botões de configuração ativados!");
+}
+
+// chama a função assim que o app carregar
+window.addEventListener("DOMContentLoaded", initConfigButtons);
+
