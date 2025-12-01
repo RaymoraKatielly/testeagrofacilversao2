@@ -300,73 +300,114 @@ screenContainer.appendChild(sec);
    PRODUTOS
 --------------------------- */
 function renderProdutos() {
-  clearScreen();
+clearScreen();
 
-  const sec = document.createElement("section");
-  sec.className = "flex-1 flex flex-col h-full overflow-auto p-6";
+const sec = document.createElement("section");
+sec.className = "flex-1 flex flex-col h-full overflow-auto p-6";
 
-  const title = document.createElement("h2");
-  title.className = "text-2xl font-extrabold text-[#3F2A14]";
-  title.textContent = "Produtos";
+const title = document.createElement("h2");
+title.className = "text-2xl font-extrabold text-[#3F2A14]";
+title.textContent = "Produtos";
 
-  const subtitle = document.createElement("p");
-  subtitle.className = "mt-2 text-[#5C4A32]";
-  subtitle.textContent = "Gerencie seus produtos cadastrados.";
+const subtitle = document.createElement("p");
+subtitle.className = "mt-2 text-[#5C4A32]";
+subtitle.textContent = "Gerencie seus produtos cadastrados.";
 
-  const cont = document.createElement("div");
-  cont.id = "product-list";
-  cont.className = "mt-6 flex flex-col gap-2";
+const cont = document.createElement("div");
+cont.id = "product-list";
+cont.className = "mt-6 flex flex-col gap-2";
 
-  sec.append(title, subtitle, cont);
-  screenContainer.appendChild(sec);
+// Botão para cadastrar novo produto
+const addBtn = document.createElement("button");
+addBtn.textContent = "Cadastrar produto";
+addBtn.className = "bg-green-500 text-white px-4 py-2 rounded mt-4";
+addBtn.addEventListener("click", () => {
+const name = prompt("Nome do produto:");
+if (!name) return;
+
+```
+const newProduct = { id: Date.now(), name };
+products.push(newProduct);
+save(storageKeys.PRODUTOS, products);
+updateProductListUI();
+```
+
+});
+
+sec.append(title, subtitle, addBtn, cont);
+screenContainer.appendChild(sec);
+
+// Garante que cada produto tem um ID confiável
+products.forEach((prod, index) => {
+if (prod.id == null) {
+prod.id = Date.now() + index;
 }
-  function updateProductListUI() {
-  cont.innerHTML = "";
+});
 
-  products.forEach(prod => {
-    const div = document.createElement("div");
-    div.className = "product-item flex justify-between items-center p-2 border-b rounded";
-    div.innerHTML = `
-      <span>${prod.name}</span>
-      <div class="flex gap-2">
-        <button class="edit-product bg-blue-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Editar</button>
-        <button class="delete-product bg-red-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Excluir</button>
-      </div>
-    `;
-    cont.appendChild(div);
-  });
+function updateProductListUI() {
+cont.innerHTML = "";
 
-  // Delete seguro
-  cont.querySelectorAll(".delete-product").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = Number(btn.dataset.id);
-      if (isNaN(id)) return console.error("ID inválido:", btn.dataset.id);
+products.forEach(prod => {
+  if (prod.id == null) return;
 
-      products = products.filter(p => p.id !== id);
-      save(storageKeys.PRODUTOS, products);
-      updateProductListUI();
+  const div = document.createElement("div");
+  div.className = "product-item flex justify-between items-center p-2 border-b rounded";
 
-      if (navigator.onLine) {
-        try {
-          const { error } = await supabase.from("produtos").delete().eq("id", id);
-          if (error) throw error;
-          console.log("Produto deletado no Supabase:", id);
-        } catch (e) {
-          console.warn("Erro delete Supabase:", e);
-        }
+  div.innerHTML = `
+    <span>${prod.name}</span>
+    <div class="flex gap-2">
+      <button class="edit-product bg-blue-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Editar</button>
+      <button class="delete-product bg-red-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Excluir</button>
+    </div>
+  `;
+
+  cont.appendChild(div);
+});
+
+// Botões de deletar
+cont.querySelectorAll(".delete-product").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const id = Number(btn.dataset.id);
+    if (isNaN(id)) {
+      console.error("ID inválido:", btn.dataset.id);
+      return;
+    }
+
+    products = products.filter(p => p.id !== id);
+    save(storageKeys.PRODUTOS, products);
+    updateProductListUI();
+
+    if (navigator.onLine) {
+      try {
+        const { error } = await supabase.from("produtos").delete().eq("id", id);
+        if (error) throw error;
+        console.log("Produto deletado no Supabase:", id);
+      } catch (e) {
+        console.warn("Erro delete Supabase:", e);
       }
-    });
+    }
   });
+});
 
-  // Editar produto
-  cont.querySelectorAll(".edit-product").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.id);
-      const produto = products.find(p => p.id === id);
-      if (!produto) return;
-      console.log("Editar produto:", produto);
-    });
+// Botões de editar
+cont.querySelectorAll(".edit-product").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const id = Number(btn.dataset.id);
+    const produto = products.find(p => p.id === id);
+    if (!produto) return;
+
+    const newName = prompt("Editar nome do produto:", produto.name);
+    if (!newName) return;
+
+    produto.name = newName;
+    save(storageKeys.PRODUTOS, products);
+    updateProductListUI();
   });
+});
+
+}
+
+updateProductListUI();
 }
 
 /* ---------------------------
