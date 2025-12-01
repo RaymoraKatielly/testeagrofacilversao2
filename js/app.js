@@ -242,24 +242,31 @@ const iconRelatorios = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stro
 // Função btn() com hover animado
 // =====================
 const btn = (label, key, iconSVG) => {
-const b = document.createElement("button");
-b.type = "button";
-b.className =
-"focus-ring flex flex-col items-center justify-center gap-2 rounded-2xl px-6 py-4 font-bold text-sm bg-[#16A34A] text-[#FDF6E3] hover:opacity-90 transition-transform transform hover:scale-105";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className =
+    "focus-ring flex flex-col items-center justify-center gap-2 rounded-2xl px-6 py-4 font-bold text-sm bg-[#16A34A] text-[#FDF6E3] hover:opacity-90 transition-transform transform hover:scale-105";
 
-```
-const icon = document.createElement("div");
-icon.innerHTML = iconSVG;
-icon.className = "w-10 h-10 sm:w-12 sm:h-12 transition-transform transform hover:scale-110";
+  const icon = document.createElement("div");
+  if(iconSVG) icon.innerHTML = iconSVG;
+  icon.className = "w-10 h-10 sm:w-12 sm:h-12 transition-transform transform hover:scale-110";
 
-const t = document.createElement("span");
-t.textContent = label;
+  const t = document.createElement("span");
+  t.textContent = label;
 
-b.append(icon, t);
-b.addEventListener("click", () => navigateTo(key));
-return b;
-```
+  b.append(icon, t);
 
+  // ← Substitua aqui o addEventListener original
+  b.addEventListener("click", () => {
+    console.log("Botão clicado:", key);
+    if (typeof navigateTo === "function") {
+      navigateTo(key);
+    } else {
+      console.error("navigateTo não é uma função!");
+    }
+  });
+
+  return b;
 };
 
 // =====================
