@@ -365,7 +365,7 @@ products.forEach(prod => {
 // Botões de deletar
 cont.querySelectorAll(".delete-product").forEach(btn => {
   btn.addEventListener("click", async () => {
-    const id = Number(btn.dataset.id);
+    const id = String(btn.dataset.id);
        if (isNaN(id)) {
       console.error("ID inválido:", btn.dataset.id);
       return;
