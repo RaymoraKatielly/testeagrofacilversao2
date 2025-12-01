@@ -686,3 +686,22 @@ if (openConfigBtn && closeConfigBtn && configPanel) {
 } else {
   console.warn("⚠️ Elementos do painel não encontrados no DOM.");
 }
+
+// ----------------------------
+// NAVEGAÇÃO DO PAINEL DE CONFIGURAÇÕES
+// ----------------------------
+
+// Suporte
+document.getElementById("btn-suporte").addEventListener("click", () => {
+  window.location.href = "suporte.html";
+});
+
+// Ajuda
+document.getElementById("btn-ajuda").addEventListener("click", () => {
+  window.location.href = "ajuda.html";
+});
+
+// Sobre
+document.getElementById("btn-sobre").addEventListener("click", () => {
+  window.location.href = "sobre.html";
+});
