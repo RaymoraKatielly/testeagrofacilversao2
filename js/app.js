@@ -352,7 +352,7 @@ products.forEach(prod => {
   div.innerHTML = `
     <span>${prod.name}</span>
     <div class="flex gap-2">
-      <button class="edit-product bg-[#D1B38A] text-white px-3 py-1 rounded" data-id="${prod.id}">Editar</button>
+      <button class="edit-product bg-green-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Editar</button>
       <button class="delete-product bg-red-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Excluir</button>
     </div>
   `;
