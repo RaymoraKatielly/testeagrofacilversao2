@@ -366,6 +366,10 @@ products.forEach(prod => {
 cont.querySelectorAll(".delete-product").forEach(btn => {
   btn.addEventListener("click", async () => {
     const id = Number(btn.dataset.id);
+       if (isNaN(id)) {
+      console.error("ID inválido:", btn.dataset.id);
+      return;
+    }
 
     products = products.filter(p => p.id !== id);
     save(storageKeys.PRODUTOS, products);
