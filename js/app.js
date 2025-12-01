@@ -329,35 +329,6 @@ addBtn.className = "bg-green-500 text-white px-4 py-2 rounded mt-4";
 addBtn.addEventListener("click", () => {
 const name = prompt("Nome do produto:");
 if (!name) return;
-
-const newProduct = { id: generateUUID(), name };
-products.push(newProduct);
-save(storageKeys.PRODUTOS, products);
-updateProductListUI();
-
-});
-
-sec.append(title, subtitle, addBtn, cont);
-screenContainer.appendChild(sec);
-
-function updateProductListUI() {
-cont.innerHTML = "";
-
-products.forEach(prod => {
-  if (!prod.id) return;
-
-  const div = document.createElement("div");
-  div.className = "product-item flex justify-between items-center p-2 border-b rounded";
-
-  div.innerHTML = `
-    <span>${prod.name}</span>
-    <div class="flex gap-2">
-      <button class="edit-product bg-green-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Editar</button>
-      <button class="delete-product bg-red-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Excluir</button>
-    </div>
-  `;
-
-  cont.appendChild(div);
 });
 
 // Deletar produtos
@@ -404,7 +375,6 @@ cont.querySelectorAll(".edit-product").forEach(btn => {
 }
 
 updateProductListUI();
-}
 
 /* ---------------------------
    VENDAS
