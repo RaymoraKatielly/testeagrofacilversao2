@@ -325,12 +325,10 @@ addBtn.addEventListener("click", () => {
 const name = prompt("Nome do produto:");
 if (!name) return;
 
-```
 const newProduct = { id: Date.now(), name };
 products.push(newProduct);
 save(storageKeys.PRODUTOS, products);
 updateProductListUI();
-```
 
 });
 
