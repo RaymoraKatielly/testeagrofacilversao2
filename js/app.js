@@ -317,6 +317,11 @@ const cont = document.createElement("div");
 cont.id = "product-list";
 cont.className = "mt-6 flex flex-col gap-2";
 
+// Função para gerar UUID
+function generateUUID() {
+return crypto.randomUUID();
+}
+
 // Botão para cadastrar novo produto
 const addBtn = document.createElement("button");
 addBtn.textContent = "Cadastrar produto";
@@ -325,24 +330,15 @@ addBtn.addEventListener("click", () => {
 const name = prompt("Nome do produto:");
 if (!name) return;
 
-```
-const newProduct = { id: Date.now().toString(), name }; // ID como string
+const newProduct = { id: generateUUID(), name };
 products.push(newProduct);
 save(storageKeys.PRODUTOS, products);
 updateProductListUI();
-```
 
 });
 
 sec.append(title, subtitle, addBtn, cont);
 screenContainer.appendChild(sec);
-
-// Garante que cada produto tem um ID confiável (numérico ou string)
-products.forEach((prod, index) => {
-if (!prod.id) {
-prod.id = Date.now().toString() + index; // ID local único como string
-}
-});
 
 function updateProductListUI() {
 cont.innerHTML = "";
@@ -364,17 +360,19 @@ products.forEach(prod => {
   cont.appendChild(div);
 });
 
-// Botões de deletar
+// Deletar produtos
 cont.querySelectorAll(".delete-product").forEach(btn => {
   btn.addEventListener("click", async () => {
-    const id = btn.dataset.id; // mantém como string
+    const id = btn.dataset.id;
+    if (!id) {
+      console.error("ID inválido:", btn.dataset.id);
+      return;
+    }
 
-    // Remove local
-    products = products.filter(p => String(p.id) !== id);
+    products = products.filter(p => p.id !== id);
     save(storageKeys.PRODUTOS, products);
     updateProductListUI();
 
-    // Remove remoto (Supabase)
     if (navigator.onLine) {
       try {
         const { error } = await supabase.from("produtos").delete().eq("id", id);
@@ -387,11 +385,11 @@ cont.querySelectorAll(".delete-product").forEach(btn => {
   });
 });
 
-// Botões de editar
+// Editar produtos
 cont.querySelectorAll(".edit-product").forEach(btn => {
   btn.addEventListener("click", () => {
     const id = btn.dataset.id;
-    const produto = products.find(p => String(p.id) === id);
+    const produto = products.find(p => p.id === id);
     if (!produto) return;
 
     const newName = prompt("Editar nome do produto:", produto.name);
