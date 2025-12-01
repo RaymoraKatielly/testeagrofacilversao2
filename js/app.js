@@ -320,14 +320,19 @@ function renderProdutos() {
   sec.append(title, subtitle, cont);
   screenContainer.appendChild(sec);
 
-  // Garante que cada produto tem um ID
+  // Garante que cada produto tem um ID confiável
   products.forEach((prod, index) => {
-    if (prod.id == null) prod.id = index + 1;
+    if (prod.id == null) {
+      prod.id = Date.now() + index; // gera ID único local
+    }
   });
 
   function updateProductListUI() {
     cont.innerHTML = "";
-    products.forEach((prod) => {
+
+    products.forEach(prod => {
+      if (prod.id == null) return;
+
       const div = document.createElement("div");
       div.className = "product-item flex justify-between items-center p-2 border-b rounded";
 
@@ -342,32 +347,33 @@ function renderProdutos() {
       cont.appendChild(div);
     });
 
-    // Botões de delete
-    cont.querySelectorAll(".delete-product").forEach((btn) => {
+    // Delete seguro
+    cont.querySelectorAll(".delete-product").forEach(btn => {
       btn.addEventListener("click", async () => {
         const id = Number(btn.dataset.id);
         if (isNaN(id)) return console.error("ID inválido:", btn.dataset.id);
 
-        products = products.filter((x) => x.id !== id);
+        products = products.filter(p => p.id !== id);
         save(storageKeys.PRODUTOS, products);
         updateProductListUI();
 
         if (navigator.onLine) {
           try {
-            await supabase.from("produtos").delete().eq("id", id);
+            const { error } = await supabase.from("produtos").delete().eq("id", id);
+            if (error) throw error;
             console.log("Produto deletado no Supabase:", id);
           } catch (e) {
-            console.warn("Erro delete Supabase", e);
+            console.warn("Erro delete Supabase:", e);
           }
         }
       });
     });
 
-    // Botões de editar
-    cont.querySelectorAll(".edit-product").forEach((btn) => {
+    // Editar produto
+    cont.querySelectorAll(".edit-product").forEach(btn => {
       btn.addEventListener("click", () => {
         const id = Number(btn.dataset.id);
-        const produto = products.find((p) => p.id === id);
+        const produto = products.find(p => p.id === id);
         if (!produto) return;
         console.log("Editar produto:", produto);
       });
