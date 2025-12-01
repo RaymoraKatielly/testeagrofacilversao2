@@ -325,20 +325,22 @@ addBtn.addEventListener("click", () => {
 const name = prompt("Nome do produto:");
 if (!name) return;
 
-const newProduct = { id: Date.now(), name };
+```
+const newProduct = { id: Date.now().toString(), name }; // ID como string
 products.push(newProduct);
 save(storageKeys.PRODUTOS, products);
 updateProductListUI();
+```
 
 });
 
 sec.append(title, subtitle, addBtn, cont);
 screenContainer.appendChild(sec);
 
-// Garante que cada produto tem um ID confiável
+// Garante que cada produto tem um ID confiável (numérico ou string)
 products.forEach((prod, index) => {
-if (prod.id == null) {
-prod.id = Date.now() + index;
+if (!prod.id) {
+prod.id = Date.now().toString() + index; // ID local único como string
 }
 });
 
@@ -346,7 +348,7 @@ function updateProductListUI() {
 cont.innerHTML = "";
 
 products.forEach(prod => {
-  if (prod.id == null) return;
+  if (!prod.id) return;
 
   const div = document.createElement("div");
   div.className = "product-item flex justify-between items-center p-2 border-b rounded";
@@ -365,16 +367,14 @@ products.forEach(prod => {
 // Botões de deletar
 cont.querySelectorAll(".delete-product").forEach(btn => {
   btn.addEventListener("click", async () => {
-    const id = String(btn.dataset.id);
-       if (isNaN(id)) {
-      console.error("ID inválido:", btn.dataset.id);
-      return;
-    }
+    const id = btn.dataset.id; // mantém como string
 
-    products = products.filter(p => p.id !== id);
+    // Remove local
+    products = products.filter(p => String(p.id) !== id);
     save(storageKeys.PRODUTOS, products);
     updateProductListUI();
 
+    // Remove remoto (Supabase)
     if (navigator.onLine) {
       try {
         const { error } = await supabase.from("produtos").delete().eq("id", id);
@@ -390,8 +390,8 @@ cont.querySelectorAll(".delete-product").forEach(btn => {
 // Botões de editar
 cont.querySelectorAll(".edit-product").forEach(btn => {
   btn.addEventListener("click", () => {
-    const id = Number(btn.dataset.id);
-    const produto = products.find(p => p.id === id);
+    const id = btn.dataset.id;
+    const produto = products.find(p => String(p.id) === id);
     if (!produto) return;
 
     const newName = prompt("Editar nome do produto:", produto.name);
