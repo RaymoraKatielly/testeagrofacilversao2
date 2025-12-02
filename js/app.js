@@ -64,148 +64,79 @@ let currentScreen = "home";
 let screenContainer = null;
 
 /* ---------------------------
-   Supabase helpers - colunas das tabelas
+Supabase LOAD (corrigido)
 --------------------------- */
-async function saveProductToSupabase(produto) {
-  try {
-    const { data, error } = await supabase.from('produto').insert([produto]);
-    if (error) console.error("Supabase erro (produto):", error);
-    else console.log("Produto salvo no Supabase:", data);
-  } catch (err) {
-    console.warn("Erro ao salvar produto no Supabase:", err);
-  }
-}
-
-async function saveVendaToSupabase(venda) {
-  try {
-    const { data, error } = await supabase.from('venda').insert([venda]);
-    if (error) console.error("Supabase erro (venda):", error);
-    else console.log("Venda salva no Supabase:", data);
-  } catch (err) {
-    console.warn("Erro ao salvar venda no Supabase:", err);
-  }
-}
-
-async function saveCustoToSupabase(custo) {
-  try {
-    const { data, error } = await supabase.from('custo').insert([custo]);
-    if (error) console.error("Supabase erro (custo):", error);
-    else console.log("Custo salvo no Supabase:", data);
-  } catch (err) {
-    console.warn("Erro ao salvar custo no Supabase:", err);
-  }
-}
-
 async function loadProductsFromSupabase() {
-  try {
-    const { data, error } = await supabase.from('produto').select('*');
-    if (error) throw error;
-    if (data) {
-      products = data.map(p => ({ id: p.id || Date.now(), nome: p.nome, preco: p.preco, synced: true }));
-      save(storageKeys.PRODUTOS, products);
-    }
-  } catch (err) {
-    console.warn("Não foi possível carregar produtos do Supabase, usando LocalStorage.", err);
-  }
+try {
+const { data, error } = await supabase.from('produto').select('*');
+if (error) throw error;
+if (data) {
+products = data.map(p => ({
+id: p.id,
+nome: p.nome,
+preco: p.preco,
+synced: true
+}));
+save(storageKeys.PRODUTOS, products);
+}
+} catch (err) {
+console.warn("Falha ao carregar produtos do Supabase.");
+}
 }
 
-async function loadVendasFromSupabase() {
-  try {
-    const { data, error } = await supabase.from('venda').select('*');
-    if (error) throw error;
-    if (data) {
-      vendas = data.map(v => ({
-        id: v.id || Date.now(),
-        produtoId: v.produtoId,
-        produtoNome: v.produtoNome,
-        quantidade: v.quantidade,
-        total_venda: v.total_venda,
-        created_at: v.created_at,
-        synced: true
-      }));
-      save(storageKeys.VENDAS, vendas);
-    }
-  } catch (err) {
-    console.warn("Não foi possível carregar vendas do Supabase, usando LocalStorage.", err);
-  }
-}
-
-async function loadCustosFromSupabase() {
-  try {
-    const { data, error } = await supabase.from('custo').select('*');
-    if (error) throw error;
-    if (data) {
-      custos = data.map(c => ({
-        id: c.id || Date.now(),
-        descricao: c.descricao,
-        valor: c.valor,
-        tipo: c.tipo,
-        data: c.data,
-        synced: true
-      }));
-      save(storageKeys.CUSTOS, custos);
-    }
-  } catch (err) {
-    console.warn("Não foi possível carregar custos do Supabase, usando LocalStorage.", err);
-  }
-}
 
 /* ---------------------------
-   Sincronização automática
+Sincronização
 --------------------------- */
 async function syncPendingData() {
-  for (const p of products.filter(x => !x.synced)) {
-    await saveProductToSupabase(p);
-    p.synced = true;
-  }
-  for (const c of custos.filter(x => !x.synced)) {
-    await saveCustoToSupabase(c);
-    c.synced = true;
-  }
-  for (const v of vendas.filter(x => !x.synced)) {
-    await saveVendaToSupabase(v);
-    v.synced = true;
-  }
-  save(storageKeys.PRODUTOS, products);
-  save(storageKeys.CUSTOS, custos);
-  save(storageKeys.VENDAS, vendas);
+for (const p of products.filter(x => !x.synced)) {
+try {
+await supabase.from("produto").insert([p]);
+p.synced = true;
+} catch {}
+}
+save(storageKeys.PRODUTOS, products);
 }
 
-window.addEventListener('online', () => {
-  if(config.autoSync) syncPendingData();
+
+window.addEventListener("online", () => {
+if (config.autoSync) syncPendingData();
 });
 
-/* ---------------------------
-   Utilidades de UI
---------------------------- */
-function clearScreen() { if (!screenContainer) return; screenContainer.innerHTML = ""; }
-function createBackButton(text = "Voltar", target = "home") {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "focus-ring rounded-full bg-[#D1B38A] px-3 py-1 text-sm font-bold text-[#3F2A14]";
-  btn.textContent = text;
-  btn.addEventListener("click", () => navigateTo(target));
-  return btn;
-}
-function findProductById(id) { return products.find(p => p.id === Number(id)); }
 
 /* ---------------------------
-   Navegação
+UI helpers
+--------------------------- */
+function clearScreen() {
+if (!screenContainer) return;
+screenContainer.innerHTML = "";
+}
+
+
+function createBackButton(text = "Voltar", target = "home") {
+const btn = document.createElement("button");
+btn.className = "focus-ring rounded-full bg-[#D1B38A] px-3 py-1 text-sm font-bold text-[#3F2A14]";
+btn.textContent = text;
+btn.onclick = () => navigateTo(target);
+return btn;
+}
+
+
+/* ---------------------------
+Navegação
 --------------------------- */
 function navigateTo(screenKey) {
-  currentScreen = screenKey;
-  switch(screenKey){
-    case "home": renderHome(); break;
-    case "produtos": renderProdutos(); break;
-    case "custos": renderCustos(); break;
-    case "vendas": renderVendas(); break;
-    case "relatorios": renderRelatorios(); break;
-    case "config": renderConfig(); break;
-    case "suporte": renderSuporte(); break;
-    default: renderHome();
-  }
+currentScreen = screenKey;
+switch (screenKey) {
+case "home": renderHome(); break;
+case "produtos": renderProdutos(); break;
+case "custos": renderCustos(); break;
+case "vendas": renderVendas(); break;
+case "relatorios": renderRelatorios(); break;
+case "config": renderConfig(); break;
+default: renderHome();
 }
-
+}
 /* ---------------------------
    HOME
 --------------------------- */
@@ -722,6 +653,13 @@ function renderSuporte() {
 document.addEventListener("DOMContentLoaded", async ()=>{
   screenContainer = document.getElementById("screen-container");
 
+  //Carrega produtos do Supabase ao iniciar
+  await loadProductsFromSupabase();
+
+  navigateTo("home");
+});
+
+
   // carregar dados do Supabase
   await loadProductsFromSupabase();
   await loadVendasFromSupabase();
@@ -729,7 +667,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   window.navigateTo = navigateTo;
   navigateTo("home");
-});
 
 function initConfigButtons() {
   const btnOpen = document.getElementById("btn-open-config");
