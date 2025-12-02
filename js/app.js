@@ -723,7 +723,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   screenContainer = document.getElementById("screen-container");
 
   //Carrega produtos do Supabase ao iniciar
-  await loadProductsFromSupabase();
+  //await loadProductsFromSupabase();
 
   navigateTo("home");
 });
