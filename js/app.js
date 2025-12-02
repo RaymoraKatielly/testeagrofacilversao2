@@ -651,6 +651,46 @@ function renderConfig() {
   section.appendChild(createBackButton());
 
   screenContainer.appendChild(section);
+
+  // BOTÃO LIMPAR TUDO
+  const limparBtn = document.createElement("button");
+  limparBtn.className =
+    "w-full mt-6 py-3 bg-[#C0392B] text-white font-bold text-lg rounded-xl shadow-md active:scale-95 transition-all duration-150";
+  limparBtn.textContent = "Limpar Tudo";
+
+  limparBtn.addEventListener("click", limparTudo);
+
+  section.appendChild(limparBtn);
+}
+// Função do botão limpa tudo
+async function limparTudo() {
+  if (!confirm("Tem certeza que deseja apagar TODOS os produtos, vendas e custos?")) {
+    return;
+  }
+
+  try {
+    // 1. Apagar TUDO no Supabase
+    await supabase.from("produto").delete().neq("id", "");
+    await supabase.from("venda").delete().neq("id", "");
+    await supabase.from("custo").delete().neq("id", "");
+
+    // 2. Apagar LocalStorage
+    localStorage.removeItem(storageKeys.PRODUTOS);
+    localStorage.removeItem(storageKeys.VENDAS);
+    localStorage.removeItem(storageKeys.CUSTOS);
+
+    // 3. Limpar listas em memória
+    products = [];
+    vendas = [];
+    custos = [];
+
+    alert("Todos os dados foram apagados com sucesso!");
+    navigateTo("home");
+
+  } catch (e) {
+    console.error("Erro ao limpar tudo:", e);
+    alert("Erro ao apagar dados.");
+  }
 }
 
 // Botão Suporte
