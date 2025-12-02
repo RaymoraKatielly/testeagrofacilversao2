@@ -603,94 +603,65 @@ function renderRelatorios() {
 --------------------------- */
 function renderConfig() {
   clearScreen();
+
   const section = document.createElement("section");
-  section.className = "flex-1 flex flex-col h-full p-4";
+  section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
+
+  const header = document.createElement("div");
+  header.className = "flex items-center justify-between pb-2";
 
   const title = document.createElement("h2");
-  title.textContent = "Configurações";
   title.className = "text-xl font-extrabold text-[#3F2A14]";
-  section.appendChild(title);
+  title.textContent = "Configurações";
 
-  // Sincronização automática
-  const label = document.createElement("label");
-  label.textContent = "Sincronização automática:";
-  label.className = "mt-4 flex items-center gap-2";
+  header.append(title, createBackButton());
+  section.appendChild(header);
 
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.checked = config.autoSync;
-  checkbox.addEventListener("change", () => {
-    config.autoSync = checkbox.checked;
+  const subtitle = document.createElement("p");
+  subtitle.className = "text-[#5C4A32] mb-3";
+  subtitle.textContent = "Ajuste as opções do aplicativo.";
+  section.appendChild(subtitle);
+
+  /* Alternar auto_sync */
+  const autoSyncLabel = document.createElement("label");
+  autoSyncLabel.className = "flex items-center gap-2 mb-4";
+
+  const autoSyncCheck = document.createElement("input");
+  autoSyncCheck.type = "checkbox";
+  autoSyncCheck.checked = config.autoSync;
+  autoSyncCheck.addEventListener("change", () => {
+    config.autoSync = autoSyncCheck.checked;
     save(storageKeys.CONFIG, config);
   });
 
-  label.appendChild(checkbox);
-  section.appendChild(label);
+  autoSyncLabel.append(autoSyncCheck, document.createTextNode("Sincronização automática"));
+  section.appendChild(autoSyncLabel);
 
-  // Botões Extras
-  const suporteBtn = document.createElement("button");
-  suporteBtn.textContent = "Suporte";
-  suporteBtn.className = "mt-6 bg-[#16A34A] text-white px-4 py-2 rounded-full";
-  suporteBtn.addEventListener("click", () => navigateTo("suporte"));
-
-  const ajudaBtn = document.createElement("button");
-  ajudaBtn.textContent = "Ajuda";
-  ajudaBtn.className = "mt-2 bg-[#D1B38A] text-[#3F2A14] px-4 py-2 rounded-full";
-  ajudaBtn.addEventListener("click", () => alert("Em construção"));
-
-  const sobreBtn = document.createElement("button");
-  sobreBtn.textContent = "Sobre";
-  sobreBtn.className = "mt-2 bg-[#D1B38A] text-[#3F2A14] px-4 py-2 rounded-full";
-  sobreBtn.addEventListener("click", () => alert("AgroFácil v1.0"));
-
-  section.appendChild(suporteBtn);
-  section.appendChild(ajudaBtn);
-  section.appendChild(sobreBtn);
-
-  // Botão voltar
-  section.appendChild(createBackButton());
-
-  screenContainer.appendChild(section);
-
-  // BOTÃO LIMPAR TUDO
+  /* BOTÃO LIMPAR TODOS OS PRODUTOS */
   const limparBtn = document.createElement("button");
-  limparBtn.className =
-    "w-full mt-6 py-3 bg-[#C0392B] text-white font-bold text-lg rounded-xl shadow-md active:scale-95 transition-all duration-150";
-  limparBtn.textContent = "Limpar Tudo";
+  limparBtn.textContent = "Limpar todos os produtos";
+  limparBtn.className = "bg-red-600 text-white px-4 py-2 rounded-lg mt-4 shadow font-semibold";
 
-  limparBtn.addEventListener("click", limparTudo);
+  limparBtn.addEventListener("click", async () => {
+    if (!confirm("Tem certeza que deseja APAGAR TODOS os produtos?")) return;
+
+    try {
+      await supabase.from("produto").delete().neq("id", "");
+      products = [];
+      save(storageKeys.PRODUTOS, products);
+
+      alert("Todos os produtos foram excluídos!");
+      navigateTo("produtos");
+
+    } catch (err) {
+      alert("Erro ao apagar dados do Supabase.");
+      console.error(err);
+    }
+  });
 
   section.appendChild(limparBtn);
-}
-// Função do botão limpa tudo
-async function limparTudo() {
-  if (!confirm("Tem certeza que deseja apagar TODOS os produtos, vendas e custos?")) {
-    return;
-  }
 
-  try {
-    // 1. Apagar TUDO no Supabase
-    await supabase.from("produto").delete().neq("id", "");
-    await supabase.from("venda").delete().neq("id", "");
-    await supabase.from("custo").delete().neq("id", "");
-
-    // 2. Apagar LocalStorage
-    localStorage.removeItem(storageKeys.PRODUTOS);
-    localStorage.removeItem(storageKeys.VENDAS);
-    localStorage.removeItem(storageKeys.CUSTOS);
-
-    // 3. Limpar listas em memória
-    products = [];
-    vendas = [];
-    custos = [];
-
-    alert("Todos os dados foram apagados com sucesso!");
-    navigateTo("home");
-
-  } catch (e) {
-    console.error("Erro ao limpar tudo:", e);
-    alert("Erro ao apagar dados.");
-  }
+  screenContainer.appendChild(section);
 }
 
 // Botão Suporte
