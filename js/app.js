@@ -299,58 +299,71 @@ screenContainer.appendChild(sec);
 /* ---------------------------
    PRODUTOS
 --------------------------- */
+/* ---------------------------
+PRODUTOS (corrigido)
+--------------------------- */
 function renderProdutos() {
 clearScreen();
 
-const sec = document.createElement("section");
-sec.className = "flex-1 flex flex-col h-full overflow-auto p-6";
+const section = document.createElement("section");
+section.className = "flex-1 flex flex-col h-full overflow-auto px-4 py-4";
+
+/* HEADER PADRÃO */
+const header = document.createElement("div");
+header.className = "flex items-center justify-between pb-2";
 
 const title = document.createElement("h2");
-title.className = "text-2xl font-extrabold text-[#3F2A14]";
+title.className = "text-xl font-extrabold text-[#3F2A14]";
 title.textContent = "Produtos";
 
-const subtitle = document.createElement("p");
-subtitle.className = "mt-2 text-[#5C4A32]";
-subtitle.textContent = "Gerencie seus produtos cadastrados.";
+header.append(title, createBackButton());
+section.appendChild(header);
 
+/* SUBTÍTULO */
+const subtitle = document.createElement("p");
+subtitle.className = "text-[#5C4A32] mb-3";
+subtitle.textContent = "Gerencie seus produtos cadastrados.";
+section.appendChild(subtitle);
+
+/* LISTA */
 const cont = document.createElement("div");
 cont.id = "product-list";
-cont.className = "mt-6 flex flex-col gap-2";
+cont.className = "mt-2 flex flex-col gap-2";
+section.appendChild(cont);
 
-// Função para gerar UUID
-function generateUUID() {
-return crypto.randomUUID();
-}
-
-// Botão para cadastrar novo produto
+/* Botão adicionar */
 const addBtn = document.createElement("button");
 addBtn.textContent = "Cadastrar produto";
-addBtn.className = "bg-green-500 text-white px-4 py-2 rounded mt-4";
+addBtn.className = "bg-[#16A34A] text-white px-4 py-2 rounded mt-4 shadow";
 addBtn.addEventListener("click", () => {
 const name = prompt("Nome do produto:");
 if (!name) return;
 
-const newProduct = { id: generateUUID(), name };
+```
+const newProduct = { id: crypto.randomUUID(), nome: name };
 products.push(newProduct);
+
 save(storageKeys.PRODUTOS, products);
 updateProductListUI();
+```
 
 });
+section.appendChild(addBtn);
 
-sec.append(title, subtitle, addBtn, cont);
-screenContainer.appendChild(sec);
+screenContainer.appendChild(section);
 
+/* Renderiza lista */
 function updateProductListUI() {
 cont.innerHTML = "";
 
 products.forEach(prod => {
-  if (!prod.id) return;
+  const nome = prod.nome || prod.name || "Sem nome";
 
   const div = document.createElement("div");
-  div.className = "product-item flex justify-between items-center p-2 border-b rounded";
+  div.className = "product-item flex justify-between items-center bg-white p-3 rounded-xl shadow";
 
   div.innerHTML = `
-    <span>${prod.name}</span>
+    <span class="font-semibold">${nome}</span>
     <div class="flex gap-2">
       <button class="edit-product bg-green-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Editar</button>
       <button class="delete-product bg-red-500 text-white px-3 py-1 rounded" data-id="${prod.id}">Excluir</button>
@@ -360,42 +373,37 @@ products.forEach(prod => {
   cont.appendChild(div);
 });
 
-// Deletar produtos
+/* Excluir */
 cont.querySelectorAll(".delete-product").forEach(btn => {
   btn.addEventListener("click", async () => {
     const id = btn.dataset.id;
-    if (!id) {
-      console.error("ID inválido:", btn.dataset.id);
-      return;
-    }
-
     products = products.filter(p => p.id !== id);
     save(storageKeys.PRODUTOS, products);
     updateProductListUI();
 
     if (navigator.onLine) {
       try {
-        const { error } = await supabase.from("produtos").delete().eq("id", id);
-        if (error) throw error;
-        console.log("Produto deletado no Supabase:", id);
+        await supabase.from("produtos").delete().eq("id", id);
       } catch (e) {
-        console.warn("Erro delete Supabase:", e);
+        console.warn("Erro ao excluir no Supabase:", e);
       }
     }
   });
 });
 
-// Editar produtos
+/* Editar */
 cont.querySelectorAll(".edit-product").forEach(btn => {
   btn.addEventListener("click", () => {
     const id = btn.dataset.id;
     const produto = products.find(p => p.id === id);
     if (!produto) return;
 
-    const newName = prompt("Editar nome do produto:", produto.name);
+    const newName = prompt("Editar nome do produto:", produto.nome || produto.name);
     if (!newName) return;
 
-    produto.name = newName;
+    produto.nome = newName;
+    delete produto.name;
+
     save(storageKeys.PRODUTOS, products);
     updateProductListUI();
   });
@@ -405,6 +413,7 @@ cont.querySelectorAll(".edit-product").forEach(btn => {
 
 updateProductListUI();
 }
+
 
 /* ---------------------------
    VENDAS
