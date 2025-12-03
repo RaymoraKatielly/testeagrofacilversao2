@@ -744,7 +744,7 @@ const btnAjuda = document.getElementById("btn-ajuda");
 if (btnAjuda) btnAjuda.addEventListener("click", () => alert("Em construção"));
 
 const btnSobre = document.getElementById("btn-sobre");
-if (btnSobre) btnSobre.addEventListener("click", () => alert("AgroFácil v1.0, Desenvolvido por Raymora Katielle"));
+if (btnSobre) btnSobre.addEventListener("click", () => alert("AgroFácil v1.0. Desenvolvido por Raymora Katielle"));
 
 /* ---------------------------
    helper: btn factory usado na home
