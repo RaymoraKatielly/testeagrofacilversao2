@@ -1,14 +1,12 @@
 import { supabase } from './supabaseClient.js';
 
 /* ==========================================================
-  App AgroFácil — arquivo corrigido
-  Correções: limparTudo, tabela 'produto' (singular), inicialização,
-  IDs tratados como string, listeners organizados.
+  App AgroFácil
    ========================================================== */
 
 /* ---------------------------
-   SVGs e helpers
---------------------------- */
+   SVGs (icones usados no menu da home)
+   --------------------------- */
 const iconProdutos = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-13z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>`;
 const iconVendas = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-3.866 0-7 1.79-7 4s3.134 4 7 4 7-1.79 7-4"/><path d="M12 4v4m0 8v4"/></svg>`;
 const iconCustos = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-5"/></svg>`;
@@ -84,7 +82,7 @@ async function loadProductsFromSupabase() {
     if (error) throw error;
 
     if (Array.isArray(data) && data.length > 0) {
-      // normalize and save
+     //ajustar os dados e salvar
       products = data.map(p => ({
         id: String(p.id ?? Date.now()),
         nome: p.nome ?? "",
@@ -93,8 +91,8 @@ async function loadProductsFromSupabase() {
       }));
       save(storageKeys.PRODUTOS, products);
     } else if (Array.isArray(data) && data.length === 0) {
-      // supabase returned empty list: keep localStorage as authoritative (or clear, depending on policy)
-      // we'll *not* overwrite local storage with an empty array automatically to avoid accidental wipes.
+      //o Supabase retornou uma lista vazia: manter o LocalStorage como fonte principal (ou limpar, dependendo da política) nós *não* vamos sobrescrever o LocalStorage com um array vazio automaticamente para evitar apagamentos acidentais.
+
       console.log("Supabase retornou lista vazia; mantendo dados locais (se houver).");
     }
   } catch (err) {
@@ -182,7 +180,7 @@ function createBackButton(text = "Voltar", target = "home") {
   return btn;
 }
 
-// IDs can be strings (UUID) or numbers — compare as strings for safety
+//IDs podem ser strings (UUID) ou números — compare como strings para garantir segurança.
 function findProductById(id) { return products.find(p => String(p.id) === String(id)); }
 
 /* ---------------------------
@@ -223,7 +221,7 @@ function renderHome() {
   actions.className =
     "mt-6 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 justify-items-center";
 
-  // Reuse the btn factory
+  // Reutilize a função que cria os botões.
   actions.append(
     btn("Produtos", "produtos", iconProdutos),
     btn("Vendas", "vendas", iconVendas),
@@ -285,7 +283,7 @@ function renderProdutos() {
 
     save(storageKeys.PRODUTOS, products);
 
-    // if online, try to save to supabase
+    // se estiver online, tente salvar no Supabase
     if (navigator.onLine) {
       try { await saveProductToSupabase(newProduct); newProduct.synced = true; }
       catch(e) { console.warn("Salvar produto supabase:", e); newProduct.synced = false; }
@@ -576,7 +574,7 @@ function renderConfig() {
   subtitle.textContent = "Ajuste as opções do aplicativo.";
   section.appendChild(subtitle);
 
-  /* Alternar auto_sync */
+  /* Alternar a sincronização automática*/
   const autoSyncLabel = document.createElement("label");
   autoSyncLabel.className = "flex items-center gap-2 mb-4";
 
@@ -724,7 +722,7 @@ function initConfigButtons() {
 }
 window.addEventListener("DOMContentLoaded", initConfigButtons);
 
-// event listeners do painel (botões que estão já no HTML do painel)
+// Botões que estão já no HTML do painel
 const openConfigBtn = document.getElementById("btn-open-config");
 const closeConfigBtn = document.getElementById("btn-close-config");
 const configPanel = document.getElementById("config-panel");
@@ -747,7 +745,7 @@ const btnSobre = document.getElementById("btn-sobre");
 if (btnSobre) btnSobre.addEventListener("click", () => alert("AgroFácil v1.0. Desenvolvido por Raymora Katielle"));
 
 /* ---------------------------
-   helper: btn factory usado na home
+  btn usado na home
 --------------------------- */
 const btn = (label, key, iconSVG) => {
   const b = document.createElement("button");

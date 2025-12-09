@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Endpoint de suporte
+// endereço específico onde o servidor recebe e responde requisições de suporte
 app.post("/send-support", (req, res) => {
   const { email, message } = req.body;
 

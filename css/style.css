@@ -1,5 +1,5 @@
 /* =========================================================
-   RESET GLOBAL / BASE DO DOCUMENTO
+   BASE DO DOCUMENTO
    ========================================================= */
 
 *, *::before, *::after {
@@ -49,7 +49,7 @@ body {
   --space-lg: 24px;
   --space-xl: 32px;
 
-  /* Breakpoints */
+  /*Pontos de responsividade( celular. tablet e PCs) */
   --break-sm: 480px;
   --break-md: 768px;
   --break-lg: 1024px;
